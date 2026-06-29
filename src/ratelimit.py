@@ -1,7 +1,7 @@
-"""In-memory token-bucket rate limiter, keyed by IP or API key.
+"""In-memory token-bucket rate limiter with Redis fallback, keyed by IP or API key.
 
-Stateless-enough for a single worker; for multi-worker deployments, swap the
-internal dict for Redis. Used to throttle:
+Stateless-enough for a single worker; for multi-worker deployments, Redis is the
+primary store. Used to throttle:
   - POST /signup              (1/min per IP)
   - POST /compute  (free)     (60/min per IP)
   - POST /compute/premium     (600/min per API key)
@@ -10,6 +10,8 @@ from __future__ import annotations
 import threading
 import time
 from collections import defaultdict, deque
+
+from src import redis_client
 
 _LOCK = threading.Lock()
 _BUCKETS: dict[str, deque[float]] = defaultdict(deque)
@@ -40,3 +42,17 @@ def reset(key: str | None = None) -> None:
             _BUCKETS.clear()
         else:
             _BUCKETS.pop(key, None)
+
+
+async def check_async(key: str, limit: int, window_seconds: float) -> None:
+    """Async Redis-backed rate limiter that falls back to the in-memory deque.
+
+    Raises RateLimited if the caller has exceeded the limit.
+    """
+    try:
+        allowed = await redis_client.rate_limit_check(key, limit, window_seconds)
+        if not allowed:
+            raise RateLimited(retry_after=window_seconds)
+    except Exception:
+        # Fallback to in-memory synchronous check
+        check(key, limit, window_seconds)

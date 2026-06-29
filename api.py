@@ -18,9 +18,12 @@ from pathlib import Path
 from typing import List
 
 from fastapi import FastAPI, Header, HTTPException, Request, UploadFile, File
-from fastapi.responses import PlainTextResponse, Response
+from fastapi.responses import PlainTextResponse, Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
+
+import json
+import asyncio
 
 from src import (compute, storage, keys as keysdb, ratelimit, similarity,
                  metrics, jobs, referrals, screen, predict, status_store,
@@ -716,11 +719,11 @@ def descriptors_endpoint(body: DescriptorsIn,
     return {"n": len(body.smiles), "results": results, "quota_charged": charge}
 
 
-# ---------------- async jobs ----------------
+# ---------------- async jobs (Celery-based) ----------------
 
 @app.post("/jobs")
 def job_submit(body: JobSubmitIn, x_api_key: str | None = Header(default=None)):
-    """Submit a large batch. Returns job_id; poll /jobs/{id}."""
+    """Submit a large batch. Returns job_id; poll /jobs/{id} or stream via /jobs/{id}/stream."""
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     info = keysdb.lookup(x_api_key)
@@ -732,8 +735,8 @@ def job_submit(body: JobSubmitIn, x_api_key: str | None = Header(default=None)):
         raise HTTPException(status_code=402,
                             detail=f"Quota would be exceeded ({used}/{info.monthly_quota})")
     keysdb.record(x_api_key, "/jobs", n)
-    job_id = jobs.submit(x_api_key, body.smiles)
-    jobs.start_worker()
+    job_id = jobs.submit(x_api_key, body.smiles, endpoint="/jobs", charge=n)
+    # start_worker() is a no-op now — Celery workers run externally
     return {"job_id": job_id, "status": "queued", "n_smiles": n}
 
 
@@ -766,6 +769,54 @@ def job_result(job_id: str, x_api_key: str | None = Header(default=None)):
     from fastapi.responses import FileResponse
     return FileResponse(info.result_path, media_type="application/x-jsonlines",
                         filename=f"{job_id}.jsonl")
+
+
+@app.get("/jobs/{job_id}/stream")
+async def job_stream(job_id: str, x_api_key: str | None = Header(default=None)):
+    """Server-Sent Events endpoint streaming real-time job progress from Redis."""
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="Missing x-api-key header")
+    if jobs.owner(job_id) != x_api_key:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    from src import redis_client
+
+    async def event_generator():
+        r = redis_client.get_redis()
+        channel = f"job:{job_id}:progress"
+        pubsub = r.pubsub()
+        await pubsub.subscribe(channel)
+        try:
+            # Send initial snapshot if available
+            snap = await redis_client.get_progress(job_id)
+            if snap:
+                yield f"data: {json.dumps(snap)}\n\n"
+                if snap.get("status") in ("done", "failed"):
+                    return
+            while True:
+                message = await pubsub.get_message(timeout=1.0)
+                if message and message.get("type") == "message":
+                    data = json.loads(message["data"])
+                    yield f"data: {json.dumps(data)}\n\n"
+                    if data.get("status") in ("done", "failed"):
+                        break
+                await asyncio.sleep(0.1)
+        finally:
+            await pubsub.unsubscribe(channel)
+            await pubsub.aclose()
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@app.delete("/jobs/{job_id}")
+def job_cancel(job_id: str, x_api_key: str | None = Header(default=None)):
+    """Cancel a running job by revoking its Celery task."""
+    if not x_api_key:
+        raise HTTPException(status_code=401, detail="Missing x-api-key header")
+    if jobs.owner(job_id) != x_api_key:
+        raise HTTPException(status_code=404, detail="Job not found")
+    jobs.cancel(job_id)
+    return {"job_id": job_id, "status": "cancelled"}
 
 
 # ---------------- referral program ----------------

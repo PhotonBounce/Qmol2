@@ -19,6 +19,8 @@ RUN pip install -r requirements.txt \
 COPY . .
 
 # Persistent volumes for DB / logs / job outputs
+# This image is dual-use: the default CMD runs the FastAPI server.
+# For Celery workers, override CMD in docker-compose (see docker-compose.yml).
 VOLUME ["/app/data", "/app/logs", "/app/jobs"]
 
 EXPOSE 8000

@@ -1,10 +1,13 @@
-"""Tiny thread-safe TTL+LRU cache for compute results.
+"""Tiny thread-safe TTL+LRU cache for compute results with Redis fallback.
 
 A huge fraction of customer SMILES are duplicates (same molecule across
 tenants, benchmark sets, etc). Caching their descriptor output saves our
 CPU budget and makes the service feel instant on repeat workloads.
 
 Keyed by (endpoint, inchikey-of-smiles, extra-tag).
+
+Redis is the primary cache in production; the in-memory LRU is a graceful
+fallback when Redis is unavailable.
 """
 from __future__ import annotations
 import threading
@@ -13,6 +16,8 @@ from collections import OrderedDict
 from typing import Any, Callable
 
 from rdkit import Chem
+
+from src import redis_client
 
 _DEFAULT_MAX = 10_000
 _DEFAULT_TTL_SECONDS = 24 * 3600
@@ -92,3 +97,19 @@ def memoize(tag: str, smiles: str,
     val = producer()
     COMPUTE_CACHE.set(k, val)
     return val
+
+
+async def get_cache(key: str) -> Any | None:
+    """Try Redis first; fall back to the in-memory LRU cache."""
+    try:
+        return await redis_client.cache_get(key)
+    except Exception:
+        return COMPUTE_CACHE.get(key)
+
+
+async def set_cache(key: str, value: Any, ttl: int = 86400) -> None:
+    """Try Redis first; fall back to the in-memory LRU cache."""
+    try:
+        await redis_client.cache_set(key, value, ttl)
+    except Exception:
+        COMPUTE_CACHE.set(key, value)

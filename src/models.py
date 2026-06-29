@@ -172,6 +172,8 @@ class Job(Base):
     n_processed: Mapped[Optional[int]] = mapped_column(Integer, default=0)
     result_path: Mapped[Optional[str]] = mapped_column(Text)
     error: Mapped[Optional[str]] = mapped_column(Text)
+    endpoint: Mapped[Optional[str]] = mapped_column(String(255), default="/jobs")
+    charge: Mapped[Optional[int]] = mapped_column(Integer, default=0)
     created_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, server_default=func.now()
     )
@@ -181,6 +183,7 @@ class Job(Base):
         Index("idx_jobs_status", "status"),
         Index("idx_jobs_api_key", "api_key"),
         Index("idx_jobs_created_at", "created_at"),
+        Index("idx_jobs_endpoint", "endpoint"),
     )
 
 

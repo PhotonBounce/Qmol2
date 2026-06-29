@@ -54,6 +54,31 @@ services:
       - ./logs:/app/logs
       - ./jobs:/app/jobs
 
+  worker:
+    build: .
+    image: qmol-api:latest
+    command: celery -A src.celery_app worker --loglevel=info --concurrency=2
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - USE_POSTGRES=true
+      - DATABASE_URL=postgresql+asyncpg://qmol:qmol@postgres:5432/qmol
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - qmol-data:/data
+      - ./logs:/app/logs
+      - ./jobs:/app/jobs
+
+  flower:
+    build: .
+    image: qmol-api:latest
+    command: celery -A src.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+
 volumes:
   postgres-data:
   redis-data:

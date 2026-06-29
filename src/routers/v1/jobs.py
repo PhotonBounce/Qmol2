@@ -2,9 +2,11 @@ from fastapi import APIRouter, Header, HTTPException, Depends
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Annotated
+from pathlib import Path
 import json
 import asyncio
 
+import config
 from src import jobs, keys as keysdb, redis_client
 from src.dependencies import require_api_key
 
@@ -17,7 +19,7 @@ class JobSubmitIn(BaseModel):
             "example": {"smiles": ["CCO", "c1ccccc1"]}
         }
     )
-    smiles: List[str] = Field(..., min_length=1, max_length=200000)
+    smiles: List[str] = Field(..., min_length=1, max_length=50000)
 
     @field_validator("smiles")
     @classmethod
@@ -82,7 +84,12 @@ def job_result(
     info = jobs.get(job_id)
     if not info or info.status != "done" or not info.result_path:
         raise HTTPException(status_code=409, detail=f"Job not ready (status={info.status if info else 'missing'})")
-    return FileResponse(info.result_path, media_type="application/x-jsonlines",
+    # Critical bug fix: prevent path traversal by validating result_path is inside data/jobs
+    result_path = Path(info.result_path).resolve()
+    allowed_base = Path(config.DATA_DIR).resolve()
+    if not str(result_path).startswith(str(allowed_base)):
+        raise HTTPException(status_code=403, detail="Invalid result path")
+    return FileResponse(result_path, media_type="application/x-jsonlines",
                         filename=f"{job_id}.jsonl")
 
 
@@ -118,9 +125,16 @@ async def job_stream(
                 await asyncio.sleep(0.1)
         finally:
             await pubsub.unsubscribe(channel)
-            await pubsub.aclose()
+            try:
+                await pubsub.close()
+            except Exception:
+                pass
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.delete("/jobs/{job_id}")

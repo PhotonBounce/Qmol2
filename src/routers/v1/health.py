@@ -13,24 +13,27 @@ def health():
 
 
 @router.get("/ready")
-def ready():
+async def ready():
     """Readiness probe: checks Postgres + Redis."""
-    checks = {"postgres": True, "redis": True}
+    db_ok = False
+    redis_ok = False
     try:
         from src import db
-        if db.engine is not None:
-            # best-effort connectivity check
-            pass
+        if db.engine:
+            from sqlalchemy import text
+            async with db.engine.connect() as conn:
+                await conn.execute(text("SELECT 1"))
+                db_ok = True
     except Exception:
-        checks["postgres"] = False
+        db_ok = False
     try:
         from src import redis_client
         r = redis_client.get_redis()
-        if r is not None:
-            pass
+        await r.ping()
+        redis_ok = True
     except Exception:
-        checks["redis"] = False
-    return ReadyResponse(ready=all(checks.values()), checks=checks)
+        redis_ok = False
+    return ReadyResponse(ready=db_ok and redis_ok, checks={"postgres": db_ok, "redis": redis_ok})
 
 
 @router.get("/metrics")

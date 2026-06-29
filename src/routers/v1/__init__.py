@@ -35,6 +35,10 @@ from .uploads import router as uploads_router
 from .webhooks import router as webhooks_router
 from .health import router as health_router
 from .misc import router as misc_router
+from .generation import router as generation_router
+from .nlp import router as nlp_router
+from .synthesis import router as synthesis_router
+from .dti import router as dti_router
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -69,3 +73,7 @@ v1_router.include_router(uploads_router)
 v1_router.include_router(webhooks_router)
 v1_router.include_router(health_router)
 v1_router.include_router(misc_router)
+v1_router.include_router(generation_router)
+v1_router.include_router(nlp_router)
+v1_router.include_router(synthesis_router)
+v1_router.include_router(dti_router)

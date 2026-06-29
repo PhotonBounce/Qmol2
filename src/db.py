@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -10,8 +11,8 @@ import config
 if config.USE_POSTGRES:
     engine = create_async_engine(
         config.ASYNC_DATABASE_URL,
-        pool_size=20,
-        max_overflow=10,
+        pool_size=int(os.getenv("DB_POOL_SIZE", "20")),
+        max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "10")),
         pool_pre_ping=True,
         echo=False,
     )

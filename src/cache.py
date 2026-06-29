@@ -113,3 +113,8 @@ async def set_cache(key: str, value: Any, ttl: int = 86400) -> None:
         await redis_client.cache_set(key, value, ttl)
     except Exception:
         COMPUTE_CACHE.set(key, value)
+
+
+# Backward-compat alias: router files import this as `result_cache`
+# Critical bug fix: add alias so `from src import result_cache` works
+result_cache = COMPUTE_CACHE

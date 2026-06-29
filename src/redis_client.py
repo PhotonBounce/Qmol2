@@ -58,10 +58,16 @@ async def rate_limit_check(key: str, max_requests: int, window_seconds: int) -> 
     pipe = r.pipeline()
     pipe.zremrangebyscore(key, 0, window_start)
     pipe.zcard(key)
-    pipe.zadd(key, {str(now): now})
-    pipe.expire(key, window_seconds)
-    _, current_count, _, _ = await pipe.execute()
-    return current_count < max_requests
+    results = await pipe.execute()
+    current_count = results[1]
+    if current_count < max_requests:
+        # Critical bug fix: only record the request when it is actually allowed
+        pipe = r.pipeline()
+        pipe.zadd(key, {str(now): now})
+        pipe.expire(key, window_seconds)
+        await pipe.execute()
+        return True
+    return False
 
 
 async def rate_limit_reset(key: str | None = None) -> None:

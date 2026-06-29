@@ -85,6 +85,11 @@ def require_api_key_or_env(
 def check_quota(x_api_key: str, charge: int) -> tuple[int, int]:
     """Return (used, quota) after verifying the key won't exceed quota."""
     used, quota = teams.effective_quota(x_api_key)
+    if quota <= 0:
+        raise HTTPException(
+            status_code=402,
+            detail="Quota is disabled or misconfigured for this key",
+        )
     if used + charge > quota:
         raise HTTPException(
             status_code=402,
@@ -123,3 +128,8 @@ def check_scopes(request: Request, x_api_key: str | None) -> None:
                 )
         except Exception:
             pass  # never break the request path on a scope-table error
+
+
+# Internal aliases used by v1 routers
+_require_auth = require_api_key_or_env
+_check_quota = check_quota

@@ -18,8 +18,8 @@ app.conf.update(
     timezone="UTC",
     enable_utc=True,
     task_track_started=True,
-    task_time_limit=3600,        # 1 hour hard limit
-    task_soft_time_limit=3300,   # 55 min soft limit
+    task_time_limit=int(os.getenv("CELERY_TASK_TIME_LIMIT", "3600")),
+    task_soft_time_limit=int(os.getenv("CELERY_TASK_SOFT_TIME_LIMIT", "3300")),
     worker_prefetch_multiplier=1, # Fair scheduling
     result_expires=86400,         # Results expire after 24h
     broker_connection_retry_on_startup=True,

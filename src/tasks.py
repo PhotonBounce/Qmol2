@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -229,7 +229,7 @@ def _progress(job_id: str, processed: int, total: int, status: str) -> None:
 
 def _finish(job_id: str, out_path: Path, n_processed: int, status: str = "done") -> None:
     """Mark a job as done and set result_path."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if config.USE_POSTGRES:
         _update_job_db(
             job_id, status=status, n_processed=n_processed,
@@ -245,7 +245,7 @@ def _finish(job_id: str, out_path: Path, n_processed: int, status: str = "done")
 
 def _fail(job_id: str, error: str, refund: bool = True) -> None:
     """Mark a job as failed and optionally refund quota."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if config.USE_POSTGRES:
         _update_job_db(job_id, status="failed", error=error[:500], finished_at=now)
     else:

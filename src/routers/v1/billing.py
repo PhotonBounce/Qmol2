@@ -108,7 +108,11 @@ def billing_checkout(body: CheckoutSessionIn):
     secret = os.getenv("STRIPE_SECRET_KEY")
     if not secret:
         raise HTTPException(status_code=503, detail="Billing not configured (STRIPE_SECRET_KEY unset)")
-    stripe.api_key = secret
+    secret = os.getenv("STRIPE_SECRET_KEY")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Billing not configured (STRIPE_SECRET_KEY unset)")
+    import stripe
+    stripe.api_key = secret  # thread-safe in GIL, but refactor to module-level init in v2.1
     base = os.getenv("QMOL_PUBLIC_URL", "https://qmol.app").rstrip("/")
     try:
         session = stripe.checkout.Session.create(

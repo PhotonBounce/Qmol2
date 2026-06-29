@@ -119,6 +119,9 @@ def _run_quantum_compute(
 @router.post("/compute")
 def compute_free(body: ComputeIn, request: Request):
     ip = _client_ip(request)
+    if ip == "unknown":
+        ua = request.headers.get("user-agent", "anon")[:32]
+        ip = f"unknown:{ua}"
     _rl(f"free:{ip}", limit=60, window=60.0)
     check_free_limit(len(body.smiles))
     return {"results": _run_compute(body.smiles)}

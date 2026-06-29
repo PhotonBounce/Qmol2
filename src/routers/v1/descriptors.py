@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Annotated
 
 from src import descriptors, keys as keysdb
-from src.dependencies import check_quota, record_usage, require_api_key
+from src.dependencies import check_quota, record_usage
 
 router = APIRouter(tags=["descriptors"])
 

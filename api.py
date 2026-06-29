@@ -15,6 +15,8 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
+from contextlib import asynccontextmanager
+
 from src.middleware import (
     RequestIDMiddleware,
     TimingMiddleware,
@@ -30,9 +32,19 @@ API_KEYS = {
     k.strip() for k in os.getenv("QMOL_API_KEYS", "").split(",") if k.strip()
 }
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan handler: startup and shutdown events."""
+    yield
+    from src.db import close_db
+    await close_db()
+
+
 app = FastAPI(
     title="Q-Mol API",
     version="2.0.0",
+    lifespan=lifespan,
     description=(
         "Molecular descriptor, similarity search, drug-likeness screen, "
         "and ADMET prediction API.\n\n"

@@ -261,6 +261,15 @@ async def get_progress(job_id: str) -> dict[str, Any] | None:
 
 def cancel(job_id: str) -> bool:
     """Revoke a running Celery task and mark the job as cancelled."""
+    # Critical bug fix: guard against overwriting a completed or already-failed job
+    info = get(job_id)
+    if not info:
+        return False
+    if info.status == "done":
+        return False  # Cannot cancel completed job
+    if info.status == "failed":
+        return False  # Already failed
+
     try:
         from celery.result import AsyncResult
         result = AsyncResult(job_id, app=app)

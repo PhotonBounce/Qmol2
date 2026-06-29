@@ -232,7 +232,7 @@
     "/similarity/matrix": {
       "post": {
         "summary": "Similarity Matrix",
-        "description": "Pairwise ECFP4 Tanimoto matrix among the supplied SMILES (2..500).\n\nReturns the symmetric N\u00d7N matrix plus each row's nearest neighbor \u2014 the\nprimitive for clustering/dedup/SAR. Charges 1 SMILES/input molecule.",
+        "description": "Pairwise ECFP4 Tanimoto matrix among the supplied SMILES (2..500).\n\nReturns the symmetric N×N matrix plus each row's nearest neighbor — the\nprimitive for clustering/dedup/SAR. Charges 1 SMILES/input molecule.",
         "operationId": "similarity_matrix_similarity_matrix_post",
         "parameters": [
           {
@@ -788,7 +788,7 @@
     "/alerts": {
       "post": {
         "summary": "Alerts Endpoint",
-        "description": "Structural-alert screen across PAINS A/B/C, BRENK, NIH, ZINC \u2014 reports\nwhich alerts fire and from which catalog. Charges 1 SMILES/molecule.",
+        "description": "Structural-alert screen across PAINS A/B/C, BRENK, NIH, ZINC — reports\nwhich alerts fire and from which catalog. Charges 1 SMILES/molecule.",
         "operationId": "alerts_endpoint_alerts_post",
         "parameters": [
           {
@@ -1175,7 +1175,7 @@
     "/shape3d": {
       "post": {
         "summary": "Shape3D Endpoint",
-        "description": "3D shape descriptors (NPR1/NPR2, asphericity, radius of gyration, \u2026) from\na generated conformer. Embedding failures degrade to success=false.\nCharges 5 SMILES/molecule.",
+        "description": "3D shape descriptors (NPR1/NPR2, asphericity, radius of gyration, …) from\na generated conformer. Embedding failures degrade to success=false.\nCharges 5 SMILES/molecule.",
         "operationId": "shape3d_endpoint_shape3d_post",
         "parameters": [
           {
@@ -3136,7 +3136,7 @@
     "/billing/checkout": {
       "post": {
         "summary": "Billing Checkout",
-        "description": "Create a Stripe Checkout *subscription* session for a tier and return the\nhosted-checkout URL. Public (the buyer has no key yet \u2014 the Stripe webhook\nprovisions + emails the key on payment). Returns 503 until Stripe is\nconfigured, so the endpoint is safe to ship before keys are set.",
+        "description": "Create a Stripe Checkout *subscription* session for a tier and return the\nhosted-checkout URL. Public (the buyer has no key yet — the Stripe webhook\nprovisions + emails the key on payment). Returns 503 until Stripe is\nconfigured, so the endpoint is safe to ship before keys are set.",
         "operationId": "billing_checkout_billing_checkout_post",
         "requestBody": {
           "content": {
@@ -3296,6 +3296,154 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/generate": {
+      "post": {
+        "summary": "Generate Molecules",
+        "description": "Generate novel SMILES using a character-level Markov model trained on a seed set of molecules. Returns valid, drug-like candidates.",
+        "operationId": "generate_molecules_v1_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/optimize": {
+      "post": {
+        "summary": "Optimize Molecule",
+        "description": "Optimize a single molecule toward a target property (logP, MW, TPSA, or QED) using a genetic algorithm.",
+        "operationId": "optimize_molecule_v1_optimize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptimizeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/optimize/lead": {
+      "post": {
+        "summary": "Lead Optimization",
+        "description": "Multi-objective lead optimization balancing multiple ADMET properties simultaneously (e.g., logP, MW, QED).",
+        "operationId": "optimize_lead_v1_optimize_lead_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadOptimizeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/score": {
+      "post": {
+        "summary": "Score Molecule",
+        "description": "Score a molecule against one or more ADMET / drug-likeness objectives. Returns desirability scores in [0, 1].",
+        "operationId": "score_molecule_v1_score_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScoreIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -4256,6 +4404,117 @@
           "url"
         ],
         "title": "WebhookSubIn"
+      },
+      "GenerateIn": {
+        "properties": {
+          "seed_smiles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Seed Smiles"
+          },
+          "n": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "N",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "seed_smiles"
+        ],
+        "title": "GenerateIn"
+      },
+      "OptimizeIn": {
+        "properties": {
+          "smiles": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Smiles"
+          },
+          "target_property": {
+            "type": "string",
+            "pattern": "^(logP|MW|TPSA|QED)$",
+            "title": "Target Property",
+            "default": "logP"
+          },
+          "target_value": {
+            "type": "number",
+            "title": "Target Value"
+          },
+          "max_steps": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Max Steps",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "smiles",
+          "target_value"
+        ],
+        "title": "OptimizeIn"
+      },
+      "LeadOptimizeIn": {
+        "properties": {
+          "smiles": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Smiles"
+          },
+          "objectives": {
+            "type": "object",
+            "description": "Property: (target, tolerance)",
+            "title": "Objectives"
+          },
+          "max_steps": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Max Steps",
+            "default": 100
+          }
+        },
+        "type": "object",
+        "required": [
+          "smiles",
+          "objectives"
+        ],
+        "title": "LeadOptimizeIn"
+      },
+      "ScoreIn": {
+        "properties": {
+          "smiles": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Smiles"
+          },
+          "objectives": {
+            "type": "object",
+            "description": "Property: target_value (uses default tolerances)",
+            "title": "Objectives"
+          },
+          "weights": {
+            "type": "object",
+            "description": "Optional per-objective weights",
+            "title": "Weights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "smiles"
+        ],
+        "title": "ScoreIn"
       }
     }
   }

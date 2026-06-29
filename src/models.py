@@ -171,7 +171,7 @@ class Job(Base):
     n_smiles: Mapped[int] = mapped_column(Integer, nullable=False)
     n_processed: Mapped[Optional[int]] = mapped_column(Integer, default=0)
     result_path: Mapped[Optional[str]] = mapped_column(Text)
-    error: Mapped[Optional[str]] = mapped_column(Text)
+    error: Mapped[Optional[str]] = mapped_column(Text, default="")
     endpoint: Mapped[Optional[str]] = mapped_column(String(255), default="/jobs")
     charge: Mapped[Optional[int]] = mapped_column(Integer, default=0)
     created_at: Mapped[Optional[datetime]] = mapped_column(

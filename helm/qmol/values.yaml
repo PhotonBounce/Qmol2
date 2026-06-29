@@ -1,0 +1,359 @@
+# Default values for qmol.
+# This is a YAML-formatted file. Declare variables to be passed into templates.
+
+replicaCount:
+  api: 3
+  worker: 5
+  quantumWorker: 1
+  dashboard: 2
+  flower: 1
+
+image:
+  repository: ghcr.io/photonbounce/qmol
+  tag: latest
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  api:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+  worker:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+  quantumWorker:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  dashboard:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  flower:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+autoscaling:
+  api:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Percent
+            value: 10
+            periodSeconds: 60
+      scaleUp:
+        stabilizationWindowSeconds: 0
+        policies:
+          - type: Percent
+            value: 50
+            periodSeconds: 60
+  worker:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 30
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 85
+
+livenessProbe:
+  api:
+    enabled: true
+    path: /health
+    port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+readinessProbe:
+  api:
+    enabled: true
+    path: /ready
+    port: http
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+startupProbe:
+  api:
+    enabled: true
+    path: /health
+    port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+
+service:
+  api:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+  dashboard:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  flower:
+    type: ClusterIP
+    port: 5555
+    targetPort: 5555
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+  hosts:
+    - host: qmol.app
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api
+        - path: /dashboard
+          pathType: Prefix
+          service: dashboard
+        - path: /flower
+          pathType: Prefix
+          service: flower
+  tls:
+    - secretName: qmol-tls
+      hosts:
+        - qmol.app
+
+# Sub-chart: PostgreSQL
+postgres:
+  enabled: true
+  auth:
+    username: qmol
+    database: qmol
+    existingSecret: ""
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: ""
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Sub-chart: Redis
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: ""
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Environment variables (non-secret)
+env:
+  USE_POSTGRES: "true"
+  PORT: "8000"
+  ALLOWED_HOSTS: "qmol.app,*.qmol.app"
+  PUBCHEM_START_CID: "1"
+  PUBCHEM_BATCH_SIZE: "50"
+  MAX_HEAVY_ATOMS: "8"
+  BASIS_SET: "sto-3g"
+  USE_VQE_UP_TO_QUBITS: "12"
+  MAX_CPU_SECONDS_PER_MOL: "120"
+  PUBLISH_EVERY_N_MOLECULES: "100"
+  SNAPSHOT_EVERY_HOURS: "6"
+
+# Secrets (these are template references; actual values should be injected via external secret management or --set during deploy)
+secrets:
+  qmol_admin_token: ""
+  stripe_secret_key: ""
+  stripe_webhook_secret: ""
+  mailgun_api_key: ""
+  mailgun_domain: ""
+  mailgun_from: "Q-Mol <hi@qmol.app>"
+  ibm_quantum_token: ""
+  aws_braket_role_arn: ""
+  hf_token: ""
+  hf_repo_id: ""
+
+# External secret management (e.g. Vault, AWS Secrets Manager, External Secrets Operator)
+externalSecrets:
+  enabled: false
+  provider: ""
+  secretStoreRef:
+    name: ""
+    kind: ClusterSecretStore
+  remoteRefs: {}
+
+# Node affinity / anti-affinity
+affinity:
+  api:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - api
+            topologyKey: kubernetes.io/hostname
+  worker:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                    - worker
+            topologyKey: kubernetes.io/hostname
+
+nodeSelector: {}
+tolerations: []
+
+# Pod Disruption Budget
+pdb:
+  api:
+    enabled: true
+    minAvailable: 2
+  worker:
+    enabled: true
+    minAvailable: 2
+
+# Network policy
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+  egress:
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: api
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: worker
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: quantum-worker
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+  prometheusRules:
+    enabled: true
+
+# Persistence for Q-Mol data volumes
+persistence:
+  data:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  logs:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+  jobs:
+    enabled: true
+    size: 20Gi
+    storageClass: ""

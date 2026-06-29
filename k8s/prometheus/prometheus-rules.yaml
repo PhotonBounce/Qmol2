@@ -1,0 +1,105 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: qmol-alerts
+  namespace: qmol
+  labels:
+    app.kubernetes.io/name: qmol
+    release: prometheus
+spec:
+  groups:
+    - name: qmol-api
+      rules:
+        - alert: QmolHighLatency
+          expr: |
+            histogram_quantile(0.95, 
+              rate(http_request_duration_seconds_bucket{job="qmol-api"}[5m])
+            ) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Q-Mol API high latency"
+            description: "P95 latency is {{ $value }}s for {{ $labels.method }} {{ $labels.path }} — investigate DB or Redis bottlenecks."
+
+        - alert: QmolHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{job="qmol-api",status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{job="qmol-api"}[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Q-Mol API high error rate"
+            description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }} — check logs and pod health immediately."
+
+        - alert: QmolHighQueueDepth
+          expr: |
+            celery_queue_length{queue="celery"} > 1000
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Q-Mol Celery queue depth high"
+            description: "Queue depth is {{ $value }} for {{ $labels.queue }} — scale workers or investigate task processing delays."
+
+        - alert: QmolDbConnectionSaturation
+          expr: |
+            (
+              pg_stat_activity_count{datname="qmol"}
+              /
+              pg_settings_max_connections{}
+            ) > 0.8
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Q-Mol DB connection saturation"
+            description: "DB connection utilization is {{ $value | humanizePercentage }} — increase max_connections or review connection pooling."
+
+        - alert: QmolApiPodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="qmol",container="api"}[15m]) > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Q-Mol API pod crash looping"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping — investigate logs."
+
+        - alert: QmolWorkerPodDown
+          expr: |
+            kube_deployment_status_replicas_available{namespace="qmol",deployment="qmol-worker"}
+            <
+            kube_deployment_spec_replicas{namespace="qmol",deployment="qmol-worker"}
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Q-Mol worker pods unavailable"
+            description: "Available workers ({{ $value }}) is less than desired — check for resource exhaustion or pod failures."
+
+        - alert: QmolRedisMemoryHigh
+          expr: |
+            redis_memory_used_bytes{namespace="qmol"}
+            /
+            redis_memory_max_bytes{namespace="qmol"} > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Q-Mol Redis memory usage high"
+            description: "Redis memory usage is {{ $value | humanizePercentage }} — add memory or evict stale keys."
+
+        - alert: QmolFlowerDown
+          expr: |
+            up{job="qmol-flower"} == 0
+          for: 5m
+          labels:
+            severity: info
+          annotations:
+            summary: "Q-Mol Flower monitoring down"
+            description: "Flower Celery monitoring is unreachable — check pod status and logs."

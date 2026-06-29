@@ -1,0 +1,176 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "qmol.fullname" . }}-api
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  {{- if not .Values.autoscaling.api.enabled }}
+  replicas: {{ .Values.replicaCount.api }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "qmol.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      annotations:
+        {{- include "qmol.podAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "qmol.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "qmol.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.affinity.api }}
+      affinity:
+        {{- toYaml .Values.affinity.api | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              value: {{ include "qmol.databaseUrl" . | quote }}
+            - name: REDIS_URL
+              value: {{ include "qmol.redisUrl" . | quote }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: postgres-password
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            - name: QMOL_ADMIN_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: qmol-admin-token
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: stripe-secret-key
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: stripe-webhook-secret
+            - name: MAILGUN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: mailgun-api-key
+            - name: MAILGUN_DOMAIN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: mailgun-domain
+            - name: MAILGUN_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: mailgun-from
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: hf-token
+            - name: HF_REPO_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: hf-repo-id
+            - name: IBM_QUANTUM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: ibm-quantum-token
+            - name: AWS_BRAKET_ROLE_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: aws-braket-role-arn
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: jobs
+              mountPath: /app/jobs
+          {{- if .Values.livenessProbe.api.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.api.path }}
+              port: {{ .Values.livenessProbe.api.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.api.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.api.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.api.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.api.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.api.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.api.path }}
+              port: {{ .Values.readinessProbe.api.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.api.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.api.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.api.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.api.failureThreshold }}
+          {{- end }}
+          {{- if .Values.startupProbe.api.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.startupProbe.api.path }}
+              port: {{ .Values.startupProbe.api.port }}
+            initialDelaySeconds: {{ .Values.startupProbe.api.initialDelaySeconds }}
+            periodSeconds: {{ .Values.startupProbe.api.periodSeconds }}
+            timeoutSeconds: {{ .Values.startupProbe.api.timeoutSeconds }}
+            failureThreshold: {{ .Values.startupProbe.api.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources.api | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          {{- if .Values.persistence.logs.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-logs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: jobs
+          {{- if .Values.persistence.jobs.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-jobs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

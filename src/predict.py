@@ -109,5 +109,69 @@ def predict_one(smiles: str) -> Prediction:
     )
 
 
-def predict_batch(smiles: list[str]) -> list[dict]:
-    return [predict_one(s).to_dict() for s in smiles]
+def predict_batch_ml(smiles: list[str]) -> list[dict]:
+    """Try ONNX ML first; fall back to heuristic predictions with a warning.
+
+    Returns the same shape as predict_batch(), but each property dict includes
+    value, confidence (0-1), in_domain (bool), unit, and model_version.
+    """
+    try:
+        from src.ml import predictor as ml_predictor
+        ml = ml_predictor.get_predictor()
+        return ml.predict_batch(smiles)
+    except Exception as e:  # noqa: BLE001
+        import logging
+        log = logging.getLogger(__name__)
+        log.warning("ML prediction failed (%s); falling back to heuristics", e)
+        # Heuristic fallback: wrap each prediction in the new schema
+        heur_results = predict_batch(smiles)
+        wrapped = []
+        for heur in heur_results:
+            wrapped.append({
+                "aqueous_logs": {
+                    "value": heur.get("aqueous_logs"),
+                    "confidence": 0.45,
+                    "in_domain": heur.get("drug_like", False),
+                    "unit": "log10(mol/L)",
+                    "model_version": "heuristic-v1",
+                    "source": "heuristic",
+                    "warning": f"ML unavailable ({e}); using heuristic fallback.",
+                },
+                "bbb_probability": {
+                    "value": heur.get("bbb_probability"),
+                    "confidence": 0.45,
+                    "in_domain": heur.get("drug_like", False),
+                    "unit": "probability",
+                    "model_version": "heuristic-v1",
+                    "source": "heuristic",
+                    "warning": f"ML unavailable ({e}); using heuristic fallback.",
+                },
+                "herg_risk": {
+                    "value": heur.get("herg_risk"),
+                    "confidence": 0.45,
+                    "in_domain": heur.get("drug_like", False),
+                    "unit": "category",
+                    "model_version": "heuristic-v1",
+                    "source": "heuristic",
+                    "warning": f"ML unavailable ({e}); using heuristic fallback.",
+                },
+                "gi_absorption": {
+                    "value": heur.get("gi_absorption"),
+                    "confidence": 0.45,
+                    "in_domain": heur.get("drug_like", False),
+                    "unit": "category",
+                    "model_version": "heuristic-v1",
+                    "source": "heuristic",
+                    "warning": f"ML unavailable ({e}); using heuristic fallback.",
+                },
+                "sa_score_lite": {
+                    "value": heur.get("sa_score_lite"),
+                    "confidence": 0.45,
+                    "in_domain": heur.get("drug_like", False),
+                    "unit": "1-10 scale",
+                    "model_version": "heuristic-v1",
+                    "source": "heuristic",
+                    "warning": f"ML unavailable ({e}); using heuristic fallback.",
+                },
+            })
+        return wrapped

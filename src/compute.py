@@ -5,8 +5,9 @@ Tiers (auto-selected per molecule):
    MW, logP, TPSA, HBD/HBA, rotatable bonds, QED, ring counts, ECFP4.
 2. **PySCF HF/CCSD** (optional, Linux/WSL/conda):
    ground-state energy, HOMO/LUMO, dipole.
-3. **pyQPanda VQE** (optional, Python 3.11 / Linux):
-   quantum-computed energy with full provenance.
+3. **Quantum VQE** (optional, Qiskit or pyQPanda):
+   quantum-computed energy with full provenance certificate.
+   Classical CCSD remains the ground truth; VQE is a "signature" stamp.
 """
 from __future__ import annotations
 import logging
@@ -80,6 +81,14 @@ class ComputeResult:
     runtime_seconds: float
     success: bool
     error: str | None = None
+    # Quantum VQE provenance fields
+    vqe_energy_hartree: float | None = None
+    vqe_method: str | None = None
+    vqe_circuit_hash: str | None = None
+    vqe_num_qubits: int | None = None
+    vqe_runtime_seconds: float | None = None
+    classical_energy_hartree: float | None = None
+    classical_method: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -202,6 +211,8 @@ def compute_molecule(
     use_vqe_up_to_qubits: int = 12,
     max_seconds: int = 120,
     mw: float | None = None,
+    use_vqe: bool = False,
+    backend: str = "local",
 ) -> ComputeResult:
     t0 = time.time()
     base: dict[str, Any] = dict(
@@ -216,6 +227,9 @@ def compute_molecule(
         heteroatom_count=None, formal_charge=None, stereo_centers=None,
         mol_refractivity=None, lipinski_pass=None, veber_pass=None, pains_hit=None,
         runtime_seconds=0.0, success=False, error=None,
+        vqe_energy_hartree=None, vqe_method=None, vqe_circuit_hash=None,
+        vqe_num_qubits=None, vqe_runtime_seconds=None,
+        classical_energy_hartree=None, classical_method=None,
     )
 
     mol = Chem.MolFromSmiles(smiles)
@@ -241,6 +255,41 @@ def compute_molecule(
             qc = _run_pyscf(mol3d, basis=basis)
             if qc is not None:
                 base.update(qc)
+
+    # Tier 3: Quantum VQE (optional, signature stamp)
+    if use_vqe and mol3d is not None:
+        try:
+            from src import quantum
+            # Preserve classical ground truth before overwriting
+            if base.get("energy_hartree") is not None:
+                base["classical_energy_hartree"] = base["energy_hartree"]
+                base["classical_method"] = base.get("method", "n/a")
+
+            vqe_result = None
+            if quantum.HAS_QISKIT:
+                vqe_result = quantum.run_vqe_qiskit(
+                    smiles, basis=basis, max_qubits=use_vqe_up_to_qubits
+                )
+            elif quantum.HAS_PYQPANDA:
+                vqe_result = quantum.run_vqe_pyqpanda(
+                    smiles, basis=basis, max_qubits=use_vqe_up_to_qubits
+                )
+
+            if vqe_result and vqe_result.get("success"):
+                base["energy_hartree"] = vqe_result["energy_hartree"]
+                base["method"] = vqe_result["method"]
+                base["vqe_energy_hartree"] = vqe_result["energy_hartree"]
+                base["vqe_method"] = vqe_result["method"]
+                base["vqe_circuit_hash"] = vqe_result.get("circuit_hash")
+                base["vqe_num_qubits"] = vqe_result.get("num_qubits")
+                base["vqe_runtime_seconds"] = vqe_result.get("runtime_seconds")
+            else:
+                err = vqe_result.get("error") if vqe_result else "no quantum backend available"
+                log.info("VQE skipped: %s", err)
+                base["error"] = err
+        except Exception as e:  # noqa: BLE001
+            log.info("VQE failed: %s", e)
+            base["error"] = f"vqe failed: {e}"
 
     base["success"] = True
     base["runtime_seconds"] = time.time() - t0

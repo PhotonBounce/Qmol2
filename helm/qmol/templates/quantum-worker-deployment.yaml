@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "qmol.fullname" . }}-quantum-worker
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: quantum-worker
+spec:
+  replicas: {{ .Values.replicaCount.quantumWorker }}
+  selector:
+    matchLabels:
+      {{- include "qmol.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: quantum-worker
+  template:
+    metadata:
+      annotations:
+        {{- include "qmol.podAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "qmol.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: quantum-worker
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "qmol.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: quantum-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - celery
+            - -A
+            - src.celery_app
+            - worker
+            - --loglevel=info
+            - --concurrency=1
+            - -Q
+            - quantum
+          env:
+            - name: DATABASE_URL
+              value: {{ include "qmol.databaseUrl" . | quote }}
+            - name: REDIS_URL
+              value: {{ include "qmol.redisUrl" . | quote }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: postgres-password
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            - name: IBM_QUANTUM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: ibm-quantum-token
+            - name: AWS_BRAKET_ROLE_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: aws-braket-role-arn
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: jobs
+              mountPath: /app/jobs
+          resources:
+            {{- toYaml .Values.resources.quantumWorker | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          {{- if .Values.persistence.logs.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-logs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: jobs
+          {{- if .Values.persistence.jobs.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-jobs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

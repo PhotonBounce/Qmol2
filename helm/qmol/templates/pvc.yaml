@@ -1,0 +1,53 @@
+{{- if .Values.persistence.data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "qmol.fullname" . }}-data
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}
+  {{- if .Values.persistence.data.storageClass }}
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+  {{- end }}
+{{- end }}
+---
+{{- if .Values.persistence.logs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "qmol.fullname" . }}-logs
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.persistence.logs.size }}
+  {{- if .Values.persistence.logs.storageClass }}
+  storageClassName: {{ .Values.persistence.logs.storageClass }}
+  {{- end }}
+{{- end }}
+---
+{{- if .Values.persistence.jobs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "qmol.fullname" . }}-jobs
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.persistence.jobs.size }}
+  {{- if .Values.persistence.jobs.storageClass }}
+  storageClassName: {{ .Values.persistence.jobs.storageClass }}
+  {{- end }}
+{{- end }}

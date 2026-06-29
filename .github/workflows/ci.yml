@@ -1,49 +1,197 @@
-name: ci
+name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]
+    tags: ['v*']
   pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: "3.12"
+  POETRY_VERSION: "1.8.0"
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME: photonbounce/qmol
 
 jobs:
-  test:
+  lint-and-format:
+    name: Lint & Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install deps
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pyright
+      - name: Run ruff linter
+        run: ruff check .
+      - name: Run ruff format check
+        run: ruff format --check .
+      - name: Run type checker
+        run: pyright .
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: qmol
+          POSTGRES_PASSWORD: qmol
+          POSTGRES_DB: qmol
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install "fastapi>=0.110" "uvicorn>=0.27" "email-validator>=2" pytest
+          pip install pytest pytest-asyncio
       - name: Run tests
         env:
-          QMOL_ADMIN_TOKEN: test-admin
-        run: pytest -q
-      - name: Dump OpenAPI
-        run: python scripts/dump_openapi.py
-      - uses: actions/upload-artifact@v4
-        with:
-          name: openapi
-          path: landing/openapi.json
+          DATABASE_URL: postgresql+asyncpg://qmol:qmol@localhost:5432/qmol
+          REDIS_URL: redis://localhost:6379/0
+        run: pytest tests/ -v --tb=short
 
-  docker:
+  security-scan:
+    name: Security Scan
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: [lint-and-format]
     steps:
       - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build -t qmol-api:ci .
-      - name: Smoke /health
+      - name: Build Docker image
+        run: docker build -t qmol:${{ github.sha }} .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: qmol:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      - name: Run Trivy on filesystem
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+  helm-check:
+    name: Helm Lint & Test
+    runs-on: ubuntu-latest
+    needs: [lint-and-format]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+      - name: Add Helm repositories
         run: |
-          docker run -d --name qmol -p 8000:8000 -e QMOL_ADMIN_TOKEN=smoke qmol-api:ci
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            sleep 3
-            if curl -fsS http://localhost:8000/health; then echo "OK"; exit 0; fi
-          done
-          docker logs qmol
-          exit 1
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+      - name: Helm lint
+        run: helm lint ./helm/qmol
+      - name: Helm dependencies
+        run: helm dependency build ./helm/qmol
+      - name: Create KIND cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: qmol-test
+      - name: Helm test on KIND
+        run: |
+          helm install qmol-test ./helm/qmol \
+            --namespace qmol-test --create-namespace \
+            --set postgres.enabled=true \
+            --set redis.enabled=true \
+            --set image.tag=${{ github.sha }} \
+            --set secrets.qmol_admin_token=test-token
+          helm test qmol-test --namespace qmol-test --timeout 5m
+      - name: Cleanup KIND
+        if: always()
+        run: kind delete cluster --name qmol-test
+
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [test, security-scan, helm-check]
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging..."
+          # Add kubectl/helm deploy commands here
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production..."
+          # Add kubectl/helm deploy commands here

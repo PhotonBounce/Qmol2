@@ -41,3 +41,14 @@ email-validator>=2.0
 # Celery distributed task queue + monitoring
 celery>=5.3
 flower>=2.0
+
+# ONNX ML inference (Stage 4 upgrade)
+onnxruntime>=1.17
+scikit-learn>=1.4
+
+# Quantum computing (optional — install only if running VQE tier)
+qiskit>=1.0
+qiskit-nature>=0.7
+qiskit-ibm-runtime>=0.23
+qiskit-algorithms>=0.3
+pyscf>=2.6          # already optional, but needed for VQE Hamiltonian

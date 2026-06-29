@@ -69,6 +69,7 @@ services:
       - qmol-data:/data
       - ./logs:/app/logs
       - ./jobs:/app/jobs
+      - ./models:/app/models
 
   flower:
     build: .
@@ -78,6 +79,23 @@ services:
       - "5555:5555"
     depends_on:
       - redis
+
+  quantum-worker:
+    build: .
+    image: qmol-api:latest
+    command: celery -A src.celery_app worker -Q quantum --loglevel=info --concurrency=1
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - USE_POSTGRES=true
+      - DATABASE_URL=postgresql+asyncpg://qmol:qmol@postgres:5432/qmol
+      - REDIS_URL=redis://redis:6379/0
+      - IBM_QUANTUM_TOKEN=${IBM_QUANTUM_TOKEN:-}
+    volumes:
+      - qmol-data:/data
+      - ./logs:/app/logs
+      - ./jobs:/app/jobs
 
 volumes:
   postgres-data:

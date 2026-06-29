@@ -22,6 +22,10 @@ BASIS_SET = os.getenv("BASIS_SET", "sto-3g")
 USE_VQE_UP_TO_QUBITS = int(os.getenv("USE_VQE_UP_TO_QUBITS", "12"))
 MAX_CPU_SECONDS_PER_MOL = int(os.getenv("MAX_CPU_SECONDS_PER_MOL", "120"))
 
+# Quantum cloud credentials (optional)
+IBM_QUANTUM_TOKEN = os.getenv("IBM_QUANTUM_TOKEN", "")
+AWS_BRAKET_ROLE_ARN = os.getenv("AWS_BRAKET_ROLE_ARN", "")
+
 PUBLISH_EVERY_N_MOLECULES = int(os.getenv("PUBLISH_EVERY_N_MOLECULES", "100"))
 SNAPSHOT_EVERY_HOURS = int(os.getenv("SNAPSHOT_EVERY_HOURS", "6"))
 
@@ -44,6 +48,9 @@ STATE_PATH = DATA_DIR / "state.json"
 
 KEYS_DB_PATH = Path(os.getenv("QMOL_KEYS_DB", DATA_DIR / "keys.sqlite"))
 JOBS_DB_PATH = Path(os.getenv("QMOL_JOBS_DB", DATA_DIR / "jobs.sqlite"))
+
+# ML model directory (overridable for external model mounts)
+MODELS_DIR = Path(os.getenv("MODELS_DIR", ROOT / "src" / "ml" / "models"))
 
 # TrustedHostMiddleware (comma-separated; empty = disabled)
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "")

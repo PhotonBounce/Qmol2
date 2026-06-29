@@ -1,0 +1,35 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: qmol-api-pdb
+  namespace: qmol
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qmol
+      app.kubernetes.io/component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: qmol-worker-pdb
+  namespace: qmol
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qmol
+      app.kubernetes.io/component: worker
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: qmol-quantum-worker-pdb
+  namespace: qmol
+spec:
+  minAvailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qmol
+      app.kubernetes.io/component: quantum-worker

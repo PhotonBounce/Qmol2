@@ -11,15 +11,42 @@ dependencies:
   flutter:
     sdk: flutter
   http: ^1.2.0
-  # Google Play Billing. in_app_purchase 3.2+ ships Billing Library 7,
-  # which satisfies Play's "Billing Library 7.0.0+" policy.
   in_app_purchase: ^3.2.0
   in_app_purchase_android: ^0.3.6
   shared_preferences: ^2.2.0
   url_launcher: ^6.2.0
+  file_picker: ^6.0.0
+  path_provider: ^2.1.0
+  share_plus: ^7.0.0
+  flutter_local_notifications: ^16.0.0
+  permission_handler: ^11.0.0
+  image_picker: ^1.0.0
+  dio: ^5.4.0
+  json_annotation: ^4.8.0
+  freezed_annotation: ^2.4.0
+  riverpod: ^2.4.0
+  flutter_riverpod: ^2.4.0
+  go_router: ^12.0.0
+  fl_chart: ^0.66.0
+  flutter_markdown: ^0.6.0
+  package_info_plus: ^5.0.0
+  device_info_plus: ^9.0.0
+  flutter_secure_storage: ^9.0.0
+  connectivity_plus: ^5.0.0
+  csv: ^5.1.0
+  intl: ^0.18.0
+  cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_lints: ^4.0.0
+  build_runner: ^2.4.0
+  json_serializable: ^6.7.0
+  freezed: ^2.4.0
+  flutter_test:
+    sdk: flutter
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/logo.png
+    - assets/molecule_placeholder.svg

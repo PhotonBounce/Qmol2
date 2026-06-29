@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --fg-primary: #0f172a;
+    --fg-secondary: #475569;
+    --fg-muted: #94a3b8;
+    --accent: #0d9488;
+    --accent-light: #14b8a6;
+    --accent-dark: #0f766e;
+    --accent-50: #f0fdfa;
+    --accent-100: #ccfbf1;
+    --border: #e2e8f0;
+    --border-light: #f1f5f9;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+
+  .dark {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #0b1020;
+    --fg-primary: #f8fafc;
+    --fg-secondary: #cbd5e1;
+    --fg-muted: #64748b;
+    --accent: #14b8a6;
+    --accent-light: #2dd4bf;
+    --accent-dark: #0d9488;
+    --accent-50: #042f2e;
+    --accent-100: #134e4a;
+    --border: #334155;
+    --border-light: #1e293b;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--fg-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--fg-muted) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--fg-muted);
+    border-radius: 3px;
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-hover {
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+  .input {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    color: var(--fg-primary);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    width: 100%;
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-50);
+  }
+
+  .input::placeholder {
+    color: var(--fg-muted);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-primary {
+    background-color: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--accent-dark);
+  }
+
+  .btn-secondary {
+    background-color: var(--bg-tertiary);
+    color: var(--fg-primary);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--border);
+  }
+
+  .btn-danger {
+    background-color: var(--danger);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    opacity: 0.9;
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: var(--fg-secondary);
+  }
+
+  .btn-ghost:hover {
+    background-color: var(--bg-tertiary);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .badge-green {
+    background-color: var(--accent-50);
+    color: var(--accent-dark);
+  }
+
+  .badge-yellow {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge-red {
+    background-color: #fef2f2;
+    color: #991b1b;
+  }
+
+  .badge-blue {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

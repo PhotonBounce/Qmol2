@@ -1,0 +1,29 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "qmol.fullname" . }}-worker
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "qmol.fullname" . }}-worker
+  minReplicas: {{ .Values.autoscaling.worker.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.worker.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.worker.targetCPUUtilizationPercentage }}
+    {{- if .Values.autoscaling.worker.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.worker.targetMemoryUtilizationPercentage }}
+    {{- end }}

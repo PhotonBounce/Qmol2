@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "qmol.fullname" . }}-flower
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: flower
+spec:
+  replicas: {{ .Values.replicaCount.flower }}
+  selector:
+    matchLabels:
+      {{- include "qmol.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: flower
+  template:
+    metadata:
+      annotations:
+        {{- include "qmol.podAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "qmol.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: flower
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "qmol.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: flower
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - celery
+            - -A
+            - src.celery_app
+            - flower
+            - --port=5555
+            - --url_prefix=flower
+          ports:
+            - name: http
+              containerPort: 5555
+              protocol: TCP
+          env:
+            - name: REDIS_URL
+              value: {{ include "qmol.redisUrl" . | quote }}
+            - name: DATABASE_URL
+              value: {{ include "qmol.databaseUrl" . | quote }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: postgres-password
+          resources:
+            {{- toYaml .Values.resources.flower | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /flower/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /flower/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5

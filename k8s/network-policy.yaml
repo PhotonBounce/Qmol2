@@ -1,0 +1,149 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qmol-api-network-policy
+  namespace: qmol
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qmol
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress from nginx ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+    # Allow inter-pod communication within the qmol namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: qmol
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow external HTTPS for webhooks, APIs
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qmol-worker-network-policy
+  namespace: qmol
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qmol
+      app.kubernetes.io/component: worker
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow external HTTPS (for HuggingFace, PubChem, etc)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qmol-quantum-worker-network-policy
+  namespace: qmol
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: qmol
+      app.kubernetes.io/component: quantum-worker
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # IBM Quantum, AWS Braket, etc.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443

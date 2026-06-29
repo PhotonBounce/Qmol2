@@ -1,0 +1,28 @@
+apiVersion: v2
+name: qmol
+description: Production Helm chart for Q-Mol - Molecular descriptor API & cheminformatics platform
+type: application
+version: 0.1.0
+appVersion: "2.0.0"
+home: https://qmol.app
+sources:
+  - https://github.com/photonbounce/qmol
+maintainers:
+  - name: Q-Mol DevOps
+    email: devops@qmol.app
+keywords:
+  - cheminformatics
+  - molecular-descriptor
+  - fastapi
+  - celery
+  - quantum-computing
+  - api
+dependencies:
+  - name: postgresql
+    version: "13.2.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgres.enabled
+  - name: redis
+    version: "18.6.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled

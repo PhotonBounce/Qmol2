@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "qmol.fullname" . }}-worker
+  labels:
+    {{- include "qmol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  {{- if not .Values.autoscaling.worker.enabled }}
+  replicas: {{ .Values.replicaCount.worker }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "qmol.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      annotations:
+        {{- include "qmol.podAnnotations" . | nindent 8 }}
+      labels:
+        {{- include "qmol.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "qmol.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.affinity.worker }}
+      affinity:
+        {{- toYaml .Values.affinity.worker | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          command:
+            - celery
+            - -A
+            - src.celery_app
+            - worker
+            - --loglevel=info
+            - --concurrency=2
+            - -Q
+            - celery
+          env:
+            - name: DATABASE_URL
+              value: {{ include "qmol.databaseUrl" . | quote }}
+            - name: REDIS_URL
+              value: {{ include "qmol.redisUrl" . | quote }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: postgres-password
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: hf-token
+            - name: HF_REPO_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: hf-repo-id
+            - name: IBM_QUANTUM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: ibm-quantum-token
+            - name: AWS_BRAKET_ROLE_ARN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "qmol.fullname" . }}-secrets
+                  key: aws-braket-role-arn
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+            - name: jobs
+              mountPath: /app/jobs
+            - name: models
+              mountPath: /app/models
+          resources:
+            {{- toYaml .Values.resources.worker | nindent 12 }}
+      volumes:
+        - name: data
+          {{- if .Values.persistence.data.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          {{- if .Values.persistence.logs.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-logs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: jobs
+          {{- if .Values.persistence.jobs.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "qmol.fullname" . }}-jobs
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: models
+          emptyDir: {}

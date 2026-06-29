@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qmol
+  labels:
+    name: qmol
+    app.kubernetes.io/name: qmol
+    app.kubernetes.io/managed-by: helm

@@ -75,6 +75,17 @@ if _allowed_hosts:
 
 app.include_router(v1_router)
 
+# ------------------------------------------------------------------
+# GraphQL endpoint (optional — requires strawberry-graphql)
+# ------------------------------------------------------------------
+try:
+    from strawberry.fastapi import GraphQLRouter
+    from src.graphql.schema import schema
+    graphql_router = GraphQLRouter(schema, path="/graphql")
+    app.include_router(graphql_router, prefix="")
+except Exception:
+    pass
+
 
 # ------------------------------------------------------------------
 # Scope middleware (keep same logic as legacy _scope_middleware)

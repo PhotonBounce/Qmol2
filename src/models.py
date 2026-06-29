@@ -293,3 +293,117 @@ class Invoice(Base):
         Index("idx_invoices_api_key", "api_key"),
         Index("idx_invoices_period", "period"),
     )
+
+
+class Collection(Base):
+    """Named molecule collections with sharing support."""
+    __tablename__ = "collections"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    owner_key: Mapped[str] = mapped_column(
+        String(255),
+        ForeignKey("api_keys.key", ondelete="CASCADE"),
+        nullable=False,
+    )
+    description: Mapped[Optional[str]] = mapped_column(Text)
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+    is_public: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    __table_args__ = (
+        Index("idx_collections_owner_key", "owner_key"),
+    )
+
+
+class CollectionItem(Base):
+    """Individual molecule entries inside a collection."""
+    __tablename__ = "collection_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    collection_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("collections.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    smiles: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String(255))
+    notes: Mapped[Optional[str]] = mapped_column(Text)
+    properties: Mapped[Optional[str]] = mapped_column(Text)  # JSON
+    added_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("idx_collection_items_collection_id", "collection_id"),
+    )
+
+
+class CollectionShare(Base):
+    """Shares a collection with another API key (team member)."""
+    __tablename__ = "collection_shares"
+
+    collection_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("collections.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    shared_with_key: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("api_keys.key", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role: Mapped[Optional[str]] = mapped_column(String(16), default="viewer")
+    shared_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+
+class Webhook(Base):
+    """Enhanced webhook registration with event filtering and HMAC secret."""
+    __tablename__ = "webhooks_v2"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    api_key: Mapped[str] = mapped_column(
+        String(64),
+        ForeignKey("api_keys.key", ondelete="CASCADE"),
+        nullable=False,
+    )
+    url: Mapped[str] = mapped_column(String(1024), nullable=False)
+    events: Mapped[str] = mapped_column(String(255), nullable=False)  # comma-separated
+    secret: Mapped[str] = mapped_column(String(255), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("idx_webhooks_v2_api_key", "api_key"),
+    )
+
+
+class WebhookLog(Base):
+    """Delivery attempt log for webhooks."""
+    __tablename__ = "webhook_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    webhook_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("webhooks_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    event: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload: Mapped[str] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_status: Mapped[Optional[int]] = mapped_column(Integer)
+    last_error: Mapped[Optional[str]] = mapped_column(Text)
+    delivered: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+
+    __table_args__ = (
+        Index("idx_webhook_logs_webhook_id", "webhook_id"),
+        Index("idx_webhook_logs_created_at", "created_at"),
+    )

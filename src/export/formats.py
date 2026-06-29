@@ -1,0 +1,154 @@
+"""Export formats: 3D coordinates, regulatory, and specialty conversions."""
+from __future__ import annotations
+import base64
+import io
+from datetime import datetime
+from typing import Any
+
+from rdkit import Chem
+from rdkit.Chem import AllChem, rdMolDescriptors, Descriptors, Crippen, inchi
+
+
+def smiles_to_pdb(smiles: str) -> str:
+    """Convert SMILES to PDB format with 3D coordinates."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Invalid SMILES: {smiles!r}")
+    mol = Chem.AddHs(mol)
+    AllChem.EmbedMolecule(mol, AllChem.ETKDG())
+    AllChem.MMFFOptimizeMolecule(mol)
+    from rdkit.Chem import rdmolfiles
+    sio = io.StringIO()
+    rdmolfiles.MolToPDBBlock(mol, sio)
+    return sio.getvalue()
+
+
+def smiles_to_mol2(smiles: str) -> str:
+    """Convert SMILES to MOL2 (Tripos) format with 3D coordinates."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Invalid SMILES: {smiles!r}")
+    mol = Chem.AddHs(mol)
+    AllChem.EmbedMolecule(mol, AllChem.ETKDG())
+    AllChem.MMFFOptimizeMolecule(mol)
+    from rdkit.Chem import rdmolfiles
+    sio = io.StringIO()
+    rdmolfiles.MolToMol2Block(mol, sio)
+    return sio.getvalue()
+
+
+def smiles_to_cif(smiles: str) -> str:
+    """Convert SMILES to CIF (Crystallographic Information File) format.
+    
+    RDKit does not have native CIF writer, so we generate a minimal CIF
+    with PDB coordinates as fallback.
+    """
+    pdb = smiles_to_pdb(smiles)
+    lines = pdb.splitlines()
+    atoms = []
+    for line in lines:
+        if line.startswith("ATOM") or line.startswith("HETATM"):
+            atoms.append({
+                "atom": line[12:16].strip(),
+                "x": float(line[30:38]),
+                "y": float(line[38:46]),
+                "z": float(line[46:54]),
+            })
+    if not atoms:
+        raise ValueError("Could not extract 3D coordinates for CIF")
+
+    mol = Chem.MolFromSmiles(smiles)
+    formula = rdMolDescriptors.CalcMolFormula(mol) if mol else "N/A"
+
+    cif_lines = [
+        "data_qmol_export",
+        "_audit_creation_method Q-Mol",
+        f"_audit_creation_date {datetime.now().strftime('%Y-%m-%d')}",
+        "_cell_length_a 10.0",
+        "_cell_length_b 10.0",
+        "_cell_length_c 10.0",
+        "_cell_angle_alpha 90.0",
+        "_cell_angle_beta 90.0",
+        "_cell_angle_gamma 90.0",
+        "_symmetry_space_group_name_H-M 'P 1'",
+        "loop_",
+        "_atom_site_label",
+        "_atom_site_type_symbol",
+        "_atom_site_fract_x",
+        "_atom_site_fract_y",
+        "_atom_site_fract_z",
+    ]
+    for i, atom in enumerate(atoms):
+        cif_lines.append(f"{atom['atom']}{i} {atom['atom'][0]} {atom['x']/10:.5f} {atom['y']/10:.5f} {atom['z']/10:.5f}")
+    cif_lines.append("")
+    return "\n".join(cif_lines)
+
+
+def smiles_to_inchi(smiles: str) -> dict[str, str]:
+    """Convert SMILES to InChI and InChIKey."""
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Invalid SMILES: {smiles!r}")
+    try:
+        inchi_str = inchi.MolToInchi(mol) or ""
+    except Exception:
+        inchi_str = ""
+    try:
+        inchikey = inchi.MolToInchiKey(mol) or ""
+    except Exception:
+        inchikey = ""
+    return {"inchi": inchi_str, "inchikey": inchikey}
+
+
+def generate_fda_report(smiles: str, properties: dict[str, Any] | None = None) -> str:
+    """Generate FDA submission-ready molecular description."""
+    if properties is None:
+        properties = {}
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is not None:
+        properties.setdefault("formula", rdMolDescriptors.CalcMolFormula(mol))
+        properties.setdefault("mw", round(Descriptors.MolWt(mol), 2))
+        properties.setdefault("logp", round(Crippen.MolLogP(mol), 2))
+    return f"""## Molecular Characterization (FDA Format)
+
+**Chemical Name:** {properties.get('name', 'N/A')}
+**Molecular Formula:** {properties.get('formula', 'N/A')}
+**Molecular Weight:** {properties.get('mw', 'N/A')} Da
+**CAS Number:** {properties.get('cas', 'N/A')}
+**InChI:** {properties.get('inchi', 'N/A')}
+**InChIKey:** {properties.get('inchikey', 'N/A')}
+
+### Physicochemical Properties
+- **LogP:** {properties.get('logp', 'N/A')}
+- **pKa (estimated):** {properties.get('pka', 'N/A')}
+- **Solubility (logS):** {properties.get('logs', 'N/A')}
+- **Melting Point:** {properties.get('mp', 'N/A')} °C (estimated)
+- **Boiling Point:** {properties.get('bp', 'N/A')} °C (estimated)
+
+### ADMET Summary
+- **BBB Permeability:** {properties.get('bbb', 'N/A')}
+- **hERG Inhibition:** {properties.get('herg', 'N/A')}
+- **CYP450 Inhibition:** {properties.get('cyp', 'N/A')}
+- **Plasma Protein Binding:** {properties.get('ppb', 'N/A')}
+- **Ames Mutagenicity:** {properties.get('ames', 'N/A')}
+
+### Stability
+- **pH Stability:** {properties.get('ph_stability', 'N/A')}
+- **Light Sensitivity:** {properties.get('light', 'N/A')}
+- **Hydrolytic Stability:** {properties.get('hydrolysis', 'N/A')}
+
+Generated by Q-Mol v2.0.0 on {datetime.now().isoformat()}
+"""
+
+
+def smiles_to_cdx(smiles: str) -> str:
+    """Convert SMILES to ChemDraw CDX format (base64-encoded).
+    
+    RDKit does not have native CDX support. We return a MolBlock wrapped
+    in base64 as a placeholder, which many tools can import.
+    """
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        raise ValueError(f"Invalid SMILES: {smiles!r}")
+    molblock = Chem.MolToMolBlock(mol)
+    return base64.b64encode(molblock.encode()).decode()

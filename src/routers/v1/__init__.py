@@ -39,6 +39,10 @@ from .generation import router as generation_router
 from .nlp import router as nlp_router
 from .synthesis import router as synthesis_router
 from .dti import router as dti_router
+from .collections import router as collections_router
+from .pka import router as pka_router
+from .mmpa import router as mmpa_router
+from .pharmacophore import router as pharmacophore_router
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -77,3 +81,7 @@ v1_router.include_router(generation_router)
 v1_router.include_router(nlp_router)
 v1_router.include_router(synthesis_router)
 v1_router.include_router(dti_router)
+v1_router.include_router(collections_router)
+v1_router.include_router(pka_router)
+v1_router.include_router(mmpa_router)
+v1_router.include_router(pharmacophore_router)

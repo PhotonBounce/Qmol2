@@ -1,0 +1,48 @@
+# Android signing
+android/app/qmol-release.keystore
+android/app/qmol-upload.keystore
+android/key.properties
+android/keystore/
+
+# Build outputs
+build/
+*.aab
+*.apk
+
+# Play Store credentials
+play-store-service-account.json
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# macOS
+macos/Pods/
+macos/.symlinks/
+
+# Web
+web/.dart_tool/
+
+# Test coverage
+coverage/
+
+# Misc
+*.log
+*.tmp
+*.swp
+.DS_Store

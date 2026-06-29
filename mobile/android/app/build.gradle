@@ -12,6 +12,14 @@ if (localPropertiesFile.exists()) {
     }
 }
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withReader('UTF-8') { reader ->
+        keystoreProperties.load(reader)
+    }
+}
+
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
@@ -19,7 +27,7 @@ if (flutterVersionCode == null) {
 
 def flutterVersionName = localProperties.getProperty('flutter.versionName')
 if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
+    flutterVersionName = '2.0.0'
 }
 
 android {
@@ -46,19 +54,34 @@ android {
         targetSdk 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true
+    }
+
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias'] ?: System.getenv("QMOL_KEY_ALIAS") ?: 'qmol'
+            keyPassword keystoreProperties['keyPassword'] ?: System.getenv("QMOL_KEY_PASSWORD") ?: 'qmol123'
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : file(System.getenv("QMOL_KEYSTORE_PATH") ?: 'qmol.keystore')
+            storePassword keystoreProperties['storePassword'] ?: System.getenv("QMOL_STORE_PASSWORD") ?: 'qmol123'
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
         }
         debug {
             minifyEnabled false
             shrinkResources false
+            signingConfig signingConfigs.debug
         }
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 }
 

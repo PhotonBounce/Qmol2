@@ -7,6 +7,8 @@
 -keep class io.flutter.view.** { *; }
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keep class androidx.** { *; }
 -keep class com.google.firebase.** { *; }
 -dontwarn io.flutter.embedding.**
 
@@ -26,6 +28,7 @@
 # In-app purchase
 -keep class com.android.billingclient.** { *; }
 -keep class com.android.vending.billing.** { *; }
+-keep class com.revenuecat.purchases.** { *; }
 
 # URL Launcher
 -keep class io.flutter.plugins.urllauncher.** { *; }

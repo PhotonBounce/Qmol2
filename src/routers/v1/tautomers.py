@@ -33,7 +33,7 @@ class TautomerIn(BaseModel):
 @router.post("/tautomers")
 def tautomers_endpoint(
     body: TautomerIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Enumerate plausible tautomers. Charges 2 SMILES/molecule."""
     if not x_api_key:

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Settings,
   Eye,
@@ -10,7 +10,6 @@ import {
   Monitor,
   Download,
   Trash2,
-  AlertTriangle,
   Check,
   KeyRound,
 } from 'lucide-react';

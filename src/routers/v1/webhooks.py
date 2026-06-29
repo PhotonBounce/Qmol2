@@ -33,7 +33,7 @@ class WebhookRotateIn(BaseModel):
 @router.post("/webhooks")
 def create_webhook(
     body: WebhookCreateIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -45,7 +45,7 @@ def create_webhook(
 
 @router.get("/webhooks")
 def list_webhooks(
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -58,7 +58,7 @@ def list_webhooks(
 @router.delete("/webhooks/{webhook_id}")
 def delete_webhook(
     webhook_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -73,7 +73,7 @@ def delete_webhook(
 def get_webhook_logs(
     webhook_id: str,
     limit: int = 100,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -87,7 +87,7 @@ def get_webhook_logs(
 @router.post("/webhooks/{webhook_id}/test")
 def test_webhook(
     webhook_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -102,7 +102,7 @@ def test_webhook(
 @router.post("/webhooks/{webhook_id}/rotate")
 def rotate_webhook_secret(
     webhook_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")

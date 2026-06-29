@@ -35,7 +35,7 @@ class SubstructureIn(BaseModel):
 @router.post("/substructure")
 def substructure_endpoint(
     body: SubstructureIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Find molecules matching a SMARTS pattern."""
     if not x_api_key:

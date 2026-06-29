@@ -29,7 +29,7 @@ class Shape3DIn(BaseModel):
 @router.post("/shape3d")
 def shape3d_endpoint(
     body: Shape3DIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """3D shape descriptors from generated conformer."""
     if not x_api_key:

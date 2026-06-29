@@ -33,7 +33,7 @@ class ScaffoldIn(BaseModel):
 @router.post("/scaffolds")
 def scaffolds_endpoint(
     body: ScaffoldIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Bemis-Murcko scaffold clustering."""
     if not x_api_key:

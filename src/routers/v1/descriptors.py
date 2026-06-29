@@ -39,7 +39,7 @@ def descriptor_names():
 @router.post("/descriptors")
 def descriptors_endpoint(
     body: DescriptorsIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Full RDKit 2D descriptor panel (~200 features) per molecule."""
     if not x_api_key:

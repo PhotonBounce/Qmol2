@@ -35,7 +35,7 @@ class DiversityIn(BaseModel):
 @router.post("/diversity")
 def diversity_endpoint(
     body: DiversityIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """MaxMin Tanimoto-diversity pick."""
     if not x_api_key:

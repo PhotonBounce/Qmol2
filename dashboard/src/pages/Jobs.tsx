@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  List,
   Loader,
   CheckCircle,
   XCircle,
@@ -82,7 +81,7 @@ export default function Jobs() {
       const { data, headers } = await apiClient.get<Blob>(`/jobs/${jobId}/result`, {
         responseType: 'blob',
       });
-      const blob = new Blob([data], { type: headers['content-type'] || 'application/json' });
+      const blob = new Blob([data], { type: (headers['content-type'] as string) || 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

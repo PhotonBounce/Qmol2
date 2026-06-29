@@ -1,0 +1,11 @@
+{
+  "property": "logs",
+  "model_type": "GradientBoosting",
+  "config": "GB-300-5",
+  "r2": 0.8915625281913875,
+  "rmse": 0.7159347840874483,
+  "n_train": 902,
+  "n_test": 226,
+  "feature_dim": 2068,
+  "feature_mode": "concat"
+}

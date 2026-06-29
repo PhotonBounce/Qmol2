@@ -9,9 +9,11 @@ import ipaddress
 import os
 from typing import Annotated
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi import Header, HTTPException, Request, Depends
 
-from src import keys as keysdb, ratelimit, teams, scopes
+from src import keys as keysdb, ratelimit, teams, scopes, redis_client
 
 ADMIN_TOKEN = os.getenv("QMOL_ADMIN_TOKEN", "")
 # Legacy env-var keys (still supported for bootstrap / admin):
@@ -78,7 +80,7 @@ def _require_admin(x_admin_token: str | None) -> None:
 
 
 def require_admin(
-    x_admin_token: Annotated[str | None, Header(default=None)]
+    x_admin_token: Annotated[str | None, Header()]
 ) -> None:
     _require_admin(x_admin_token)
 
@@ -95,12 +97,39 @@ def _rl(key: str, limit: int, window: float) -> None:
 
 
 def rate_limit(key: str, limit: int, window: float) -> None:
-    """Dependency-compatible rate limiter."""
-    _rl(key, limit, window)
+    """Shared rate limiter."""
+    ratelimit.check(key, limit, window)
+
+
+async def rate_limit_async(key: str, limit: int, window: float) -> None:
+    """Async rate limiter with Redis fallback."""
+    try:
+        allowed = await redis_client.rate_limit_check(key, limit, window)
+        if not allowed:
+            raise ratelimit.RateLimited(retry_after=window)
+    except Exception:
+        ratelimit.check(key, limit, window)
+
+
+def client_ip(request) -> str:
+    """Extract client IP from request, with X-Forwarded-For trust."""
+    import os
+    trusted = os.getenv("TRUSTED_PROXIES", "").split(",")
+    xff = request.headers.get("x-forwarded-for", "").split(",")
+    if xff[0].strip() and trusted:
+        for ip in reversed(xff):
+            ip = ip.strip()
+            if ip and not any(ip.startswith(t.strip()) for t in trusted if t.strip()):
+                return ip
+    return request.client.host if request.client else "unknown"
+
+
+# Backward-compatible aliases
+_client_ip = client_ip
 
 
 def require_api_key(
-    x_api_key: Annotated[str | None, Header(default=None)]
+    x_api_key: Annotated[str | None, Header()]
 ) -> str:
     """Return the validated API key or raise 401."""
     if not x_api_key:
@@ -112,7 +141,7 @@ def require_api_key(
 
 
 def require_api_key_or_env(
-    x_api_key: Annotated[str | None, Header(default=None)]
+    x_api_key: Annotated[str | None, Header()]
 ) -> str:
     """Return the API key (accepts env bootstrap keys too)."""
     if not x_api_key:
@@ -125,8 +154,23 @@ def require_api_key_or_env(
     return x_api_key
 
 
+def check_trial_expired(key: str) -> None:
+    """Check if a trial key has expired."""
+    info = keysdb.lookup(key)
+    if info and info.tier == "trial":
+        # Parse created_at; SQLite stores it as ISO string
+        created = datetime.fromisoformat(info.created_at.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        if now - created > timedelta(days=7):
+            raise HTTPException(
+                status_code=402,
+                detail="Trial expired. Please upgrade at https://qmol.app/checkout",
+            )
+
+
 def check_quota(x_api_key: str, charge: int) -> tuple[int, int]:
     """Return (used, quota) after verifying the key won't exceed quota."""
+    check_trial_expired(x_api_key)
     used, quota = teams.effective_quota(x_api_key)
     if quota <= 0:
         raise HTTPException(

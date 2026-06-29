@@ -1,0 +1,181 @@
+name: qmol-3
+services:
+  flower:
+    build:
+      context: D:\Qmol-3
+      dockerfile: Dockerfile
+    command:
+      - celery
+      - -A
+      - src.celery_app
+      - flower
+      - --port=5555
+      - --basic-auth=admin:flower
+    depends_on:
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      REDIS_URL: redis://:qmol-redis-pass@redis:6379/0
+    image: qmol-api:latest
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 5555
+        published: "5555"
+        protocol: tcp
+  postgres:
+    environment:
+      POSTGRES_DB: qmol
+      POSTGRES_PASSWORD: qmol
+      POSTGRES_USER: qmol
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U qmol
+      timeout: 5s
+      interval: 10s
+      retries: 5
+    image: postgres:15-alpine
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 5432
+        published: "5432"
+        protocol: tcp
+    volumes:
+      - type: volume
+        source: postgres-data
+        target: /var/lib/postgresql/data
+        volume: {}
+  qmol:
+    build:
+      context: D:\Qmol-3
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: true
+      redis:
+        condition: service_healthy
+        required: true
+    environment:
+      ALLOWED_HOSTS: ""
+      ALLOWED_ORIGINS: ""
+      DATABASE_URL: postgresql+asyncpg://qmol:qmol@postgres:5432/qmol
+      MAILGUN_API_KEY: ""
+      MAILGUN_DOMAIN: ""
+      MAILGUN_FROM: Q-Mol <hi@yourdomain.com>
+      QMOL_ADMIN_TOKEN: dummy-test-token
+      REDIS_URL: redis://:qmol-redis-pass@redis:6379/0
+      STRIPE_SECRET_KEY: ""
+      STRIPE_WEBHOOK_SECRET: ""
+      TRUSTED_PROXIES: ""
+      USE_POSTGRES: "true"
+    image: qmol-api:latest
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        target: 8000
+        published: "8000"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: volume
+        source: qmol-data
+        target: /data
+        volume: {}
+      - type: bind
+        source: D:\Qmol-3\logs
+        target: /app/logs
+        bind: {}
+      - type: bind
+        source: D:\Qmol-3\jobs
+        target: /app/jobs
+        bind: {}
+  redis:
+    command:
+      - redis-server
+      - --requirepass
+      - qmol-redis-pass
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - -a
+        - qmol-redis-pass
+        - ping
+      timeout: 5s
+      interval: 10s
+      retries: 5
+    image: redis:7-alpine
+    networks:
+      default: null
+    ports:
+      - mode: ingress
+        host_ip: 127.0.0.1
+        target: 6379
+        published: "6379"
+        protocol: tcp
+    volumes:
+      - type: volume
+        source: redis-data
+        target: /data
+        volume: {}
+  worker:
+    build:
+      context: D:\Qmol-3
+      dockerfile: Dockerfile
+    command:
+      - celery
+      - -A
+      - src.celery_app
+      - worker
+      - --loglevel=info
+      - --concurrency=2
+    depends_on:
+      postgres:
+        condition: service_started
+        required: true
+      redis:
+        condition: service_started
+        required: true
+    environment:
+      DATABASE_URL: postgresql+asyncpg://qmol:qmol@postgres:5432/qmol
+      REDIS_URL: redis://:qmol-redis-pass@redis:6379/0
+      USE_POSTGRES: "true"
+    image: qmol-api:latest
+    networks:
+      default: null
+    volumes:
+      - type: volume
+        source: qmol-data
+        target: /data
+        volume: {}
+      - type: bind
+        source: D:\Qmol-3\logs
+        target: /app/logs
+        bind: {}
+      - type: bind
+        source: D:\Qmol-3\jobs
+        target: /app/jobs
+        bind: {}
+      - type: bind
+        source: D:\Qmol-3\models
+        target: /app/models
+        bind: {}
+networks:
+  default:
+    name: qmol-3_default
+volumes:
+  postgres-data:
+    name: qmol-3_postgres-data
+  qmol-data:
+    name: qmol-3_qmol-data
+  redis-data:
+    name: qmol-3_redis-data

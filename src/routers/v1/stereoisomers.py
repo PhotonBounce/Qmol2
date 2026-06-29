@@ -35,7 +35,7 @@ class StereoIn(BaseModel):
 @router.post("/stereoisomers")
 def stereoisomers_endpoint(
     body: StereoIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Enumerate distinct stereoisomers."""
     if not x_api_key:

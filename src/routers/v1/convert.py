@@ -75,7 +75,7 @@ def _authenticate(x_api_key: str | None) -> None:
 @router.post("/convert")
 def convert_endpoint(
     body: ConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Convert to canonical SMILES + InChI + InChIKey (+ optional MolBlock)."""
     _authenticate(x_api_key)
@@ -97,7 +97,7 @@ def convert_endpoint(
 @router.post("/convert/pdb")
 def convert_pdb(
     body: SingleConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Convert SMILES to PDB format with 3D coordinates."""
     _authenticate(x_api_key)
@@ -115,7 +115,7 @@ def convert_pdb(
 @router.post("/convert/mol2")
 def convert_mol2(
     body: SingleConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Convert SMILES to MOL2 (Tripos) format with 3D coordinates."""
     _authenticate(x_api_key)
@@ -133,7 +133,7 @@ def convert_mol2(
 @router.post("/convert/cif")
 def convert_cif(
     body: SingleConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Convert SMILES to CIF (Crystallographic Information File) format."""
     _authenticate(x_api_key)
@@ -151,7 +151,7 @@ def convert_cif(
 @router.post("/convert/inchi")
 def convert_inchi(
     body: SingleConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Convert SMILES to InChI and InChIKey."""
     _authenticate(x_api_key)
@@ -169,7 +169,7 @@ def convert_inchi(
 @router.post("/convert/fda")
 def convert_fda(
     body: FDAConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Generate FDA submission-ready molecular description."""
     _authenticate(x_api_key)
@@ -187,7 +187,7 @@ def convert_fda(
 @router.post("/convert/cdx")
 def convert_cdx(
     body: SingleConvertIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Convert SMILES to ChemDraw CDX format (base64-encoded MolBlock placeholder)."""
     _authenticate(x_api_key)

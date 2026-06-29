@@ -208,11 +208,8 @@ def compute_molecule(
     cid: int,
     smiles: str,
     basis: str = "sto-3g",
-    use_vqe_up_to_qubits: int = 12,
     max_seconds: int = 120,
     mw: float | None = None,
-    use_vqe: bool = False,
-    backend: str = "local",
 ) -> ComputeResult:
     t0 = time.time()
     base: dict[str, Any] = dict(
@@ -256,40 +253,7 @@ def compute_molecule(
             if qc is not None:
                 base.update(qc)
 
-    # Tier 3: Quantum VQE (optional, signature stamp)
-    if use_vqe and mol3d is not None:
-        try:
-            from src import quantum
-            # Preserve classical ground truth before overwriting
-            if base.get("energy_hartree") is not None:
-                base["classical_energy_hartree"] = base["energy_hartree"]
-                base["classical_method"] = base.get("method", "n/a")
-
-            vqe_result = None
-            if quantum.HAS_QISKIT:
-                vqe_result = quantum.run_vqe_qiskit(
-                    smiles, basis=basis, max_qubits=use_vqe_up_to_qubits
-                )
-            elif quantum.HAS_PYQPANDA:
-                vqe_result = quantum.run_vqe_pyqpanda(
-                    smiles, basis=basis, max_qubits=use_vqe_up_to_qubits
-                )
-
-            if vqe_result and vqe_result.get("success"):
-                base["energy_hartree"] = vqe_result["energy_hartree"]
-                base["method"] = vqe_result["method"]
-                base["vqe_energy_hartree"] = vqe_result["energy_hartree"]
-                base["vqe_method"] = vqe_result["method"]
-                base["vqe_circuit_hash"] = vqe_result.get("circuit_hash")
-                base["vqe_num_qubits"] = vqe_result.get("num_qubits")
-                base["vqe_runtime_seconds"] = vqe_result.get("runtime_seconds")
-            else:
-                err = vqe_result.get("error") if vqe_result else "no quantum backend available"
-                log.info("VQE skipped: %s", err)
-                base["error"] = err
-        except Exception as e:  # noqa: BLE001
-            log.info("VQE failed: %s", e)
-            base["error"] = f"vqe failed: {e}"
+    # Tier 3: Quantum VQE removed — use classical DFT (PySCF) instead.
 
     base["success"] = True
     base["runtime_seconds"] = time.time() - t0

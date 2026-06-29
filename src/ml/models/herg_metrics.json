@@ -1,0 +1,12 @@
+{
+  "property": "herg",
+  "model_type": "GradientBoosting",
+  "config": "GB-300-5",
+  "r2": 0.8000195222420949,
+  "rmse": 0.659375005536375,
+  "n_train": 960,
+  "n_test": 240,
+  "feature_dim": 2068,
+  "feature_mode": "concat",
+  "data_source": "Synthetic dataset based on known hERG SAR (pending real ChEMBL data validation)"
+}

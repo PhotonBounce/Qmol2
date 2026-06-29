@@ -33,7 +33,7 @@ class ClusterIn(BaseModel):
 @router.post("/cluster")
 def cluster_endpoint(
     body: ClusterIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Butina clustering by ECFP4 Tanimoto distance."""
     if not x_api_key:

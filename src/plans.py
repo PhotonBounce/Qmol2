@@ -13,6 +13,8 @@ PLANS = [
         "id": "free",
         "name": "Free",
         "price_usd": 0,
+        "price_monthly": 0,
+        "price_yearly": 0,
         "cadence": "forever",
         "monthly_quota": 500,
         "features": [
@@ -23,9 +25,27 @@ PLANS = [
         "stripe_price_id": None,
     },
     {
+        "id": "trial",
+        "name": "Trial",
+        "price_usd": 0,
+        "price_monthly": 0,
+        "price_yearly": 0,
+        "cadence": "7-day",
+        "monthly_quota": 10_000,
+        "duration_days": 7,
+        "features": [
+            "10k SMILES / 7 days",
+            "All endpoints (descriptors, substructure, diversity, SDF, Parquet)",
+            "No credit card required",
+        ],
+        "stripe_price_id": None,
+    },
+    {
         "id": "research",
         "name": "Research",
-        "price_usd": 49,
+        "price_usd": 20,
+        "price_monthly": 20,
+        "price_yearly": 180,  # $60 savings
         "cadence": "month",
         "monthly_quota": 10_000,
         "features": [
@@ -39,11 +59,13 @@ PLANS = [
     {
         "id": "commercial",
         "name": "Commercial",
-        "price_usd": 299,
+        "price_usd": 50,
+        "price_monthly": 50,
+        "price_yearly": 450,  # $150 savings
         "cadence": "month",
-        "monthly_quota": 100_000,
+        "monthly_quota": 50_000,
         "features": [
-            "100k SMILES / month",
+            "50k SMILES / month",
             "Commercial redistribution rights",
             "Teams + shared quota pool",
             "Outbound webhooks",
@@ -54,16 +76,22 @@ PLANS = [
     {
         "id": "enterprise",
         "name": "Enterprise",
-        "price_usd": None,   # "contact us"
+        "price_usd": None,
+        "price_monthly": None,
+        "price_yearly": None,
         "cadence": "year",
-        "monthly_quota": 10_000_000,
+        "monthly_quota": None,  # Custom
         "features": [
-            "10M SMILES / month",
-            "SLA + dedicated Slack",
-            "SSO / custom deployment",
-            "On-prem Docker image option",
+            "Unlimited SMILES / month",
+            "SLA + dedicated support",
+            "SSO (SAML/OIDC)",
+            "Custom model training",
+            "On-premise deployment option",
+            "Audit logs",
+            "Volume pricing",
         ],
         "stripe_price_id": None,
+        "contact_url": "https://qmol.app/enterprise",
     },
 ]
 

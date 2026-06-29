@@ -29,7 +29,7 @@ class DedupIn(BaseModel):
 @router.post("/dedup")
 def dedup_endpoint(
     body: DedupIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Collapse by InChIKey."""
     if not x_api_key:

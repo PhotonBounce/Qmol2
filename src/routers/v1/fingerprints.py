@@ -53,7 +53,7 @@ def fingerprint_kinds():
 @router.post("/fingerprints")
 def fingerprints_endpoint(
     body: FingerprintIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Molecular fingerprints. Charges 1 SMILES/molecule."""
     if not x_api_key:

@@ -28,7 +28,7 @@ class MmpaIn(BaseModel):
 @router.post("/mmpa/analyze")
 def mmpa_analyze_endpoint(
     body: MmpaIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Matched Molecular Pair Analysis. Charges 5x per molecule."""
     if not x_api_key:

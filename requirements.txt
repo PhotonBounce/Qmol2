@@ -37,8 +37,7 @@ uvicorn>=0.27
 typer>=0.12
 python-multipart>=0.0.20
 email-validator>=2.0
-strawberry-graphql>=0.230.0
-strawberry-graphql-fastapi>=0.230.0
+bcrypt>=4.0
 
 # Celery distributed task queue + monitoring
 celery>=5.3
@@ -47,10 +46,7 @@ flower>=2.0
 # ONNX ML inference (Stage 4 upgrade)
 onnxruntime>=1.17
 scikit-learn>=1.4
+# skl2onnx>=1.16  # optional: for ONNX export (fallback to pickle if unavailable)
 
 # Quantum computing (optional — install only if running VQE tier)
-qiskit>=1.0
-qiskit-nature>=0.7
-qiskit-ibm-runtime>=0.23
-qiskit-algorithms>=0.3
-pyscf>=2.6          # already optional, but needed for VQE Hamiltonian
+#   pip install pyscf        # needs BLAS on Windows — use conda-forge

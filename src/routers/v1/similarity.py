@@ -53,7 +53,7 @@ class SimMatrixIn(BaseModel):
 @router.post("/similarity")
 def similarity_search(
     body: SimilarityIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Tanimoto search over the public dataset. Paid-only."""
     if not x_api_key:
@@ -89,7 +89,7 @@ def similarity_search(
 @router.post("/similarity/matrix")
 def similarity_matrix(
     body: SimMatrixIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Pairwise ECFP4 Tanimoto matrix."""
     if not x_api_key:

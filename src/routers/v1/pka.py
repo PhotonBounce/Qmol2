@@ -27,7 +27,7 @@ class PkaIn(BaseModel):
 @router.post("/predict/pka")
 def predict_pka_endpoint(
     body: PkaIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Predict pKa values for ionizable groups in a molecule. Charges 2x."""
     if not x_api_key:

@@ -34,7 +34,7 @@ MODELS_DIR = Path(os.getenv("MODELS_DIR", str(CONFIG_MODELS_DIR) if CONFIG_MODEL
 ONNX_MODEL_MAP = {
     "aqueous_logs": "logs_regressor.onnx",
     "bbb_probability": "bbb_classifier.onnx",
-    "herg_risk": "herg_classifier.onnx",
+    "herg_risk": "herg_regressor.onnx",
     "gi_absorption": "gi_classifier.onnx",
     "sa_score_lite": "sa_regressor.onnx",
 }

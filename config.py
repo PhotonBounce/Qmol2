@@ -10,6 +10,8 @@ DATA_DIR.mkdir(exist_ok=True)
 
 load_dotenv(ROOT / ".env")
 
+API_KEY_PEPPER = os.getenv("API_KEY_PEPPER", "")
+
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 HF_REPO_ID = os.getenv("HF_REPO_ID", "")
 HF_PRIVATE = os.getenv("HF_PRIVATE", "true").lower() == "true"

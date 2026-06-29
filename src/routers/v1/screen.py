@@ -29,7 +29,7 @@ class ScreenIn(BaseModel):
 @router.post("/screen")
 def screen_endpoint(
     body: ScreenIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Drug-likeness screening. Charges 5 SMILES/molecule."""
     if not x_api_key:

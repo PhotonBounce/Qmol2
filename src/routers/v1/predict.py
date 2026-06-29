@@ -95,7 +95,7 @@ def _authenticate(x_api_key: str | None) -> None:
 @router.post("/predict")
 def predict_endpoint(
     body: PredictIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Legacy ADMET predictions: logS, BBB, hERG, GI, SA-score (heuristic)."""
     _authenticate(x_api_key)
@@ -112,7 +112,7 @@ def predict_endpoint(
 @router.post("/predict/ml")
 def predict_ml_endpoint(
     body: PredictIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Full ML prediction panel (5 properties). Charges 5x per molecule."""
     _authenticate(x_api_key)
@@ -130,7 +130,7 @@ def predict_ml_endpoint(
 def predict_single_property_endpoint(
     property: str,
     body: SinglePredictIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Single property prediction (charges 2x per molecule)."""
     _authenticate(x_api_key)
@@ -152,7 +152,7 @@ def predict_single_property_endpoint(
 
 @router.get("/models")
 def list_models_endpoint(
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """List all available prediction models with accuracy metrics."""
     _authenticate(x_api_key)
@@ -162,7 +162,7 @@ def list_models_endpoint(
 @router.get("/models/{model_id}")
 def get_model_card_endpoint(
     model_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Get detailed model card for a specific model_id."""
     _authenticate(x_api_key)

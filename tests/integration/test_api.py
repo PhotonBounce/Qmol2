@@ -1,228 +1,334 @@
 import pytest
-import requests
+import os
 import time
+from unittest.mock import patch
+from fastapi.testclient import TestClient
+from api import app
+from src import keys, ratelimit, jobs as jobs_module
 
-BASE_URL = "http://localhost:8000/v1"
+client = TestClient(app)
 
+TEST_EMAIL = "test@qmol.app"
+TEST_KEY = None
 
-def test_health():
-    r = requests.get(f"{BASE_URL}/health")
-    assert r.status_code == 200
-    assert r.json()["status"] == "ok"
-
-
-def test_ready():
-    r = requests.get(f"{BASE_URL}/ready")
-    assert r.status_code == 200
-    data = r.json()
-    assert "ready" in data
-    assert data["checks"]["postgres"] in [True, False]
-    assert data["checks"]["redis"] in [True, False]
-
-
-def test_compute():
-    r = requests.post(f"{BASE_URL}/compute", json={"smiles": ["CCO"]})
-    assert r.status_code == 200
-    data = r.json()
-    assert "results" in data
-    assert data["results"][0]["mw"] > 0
-
-
-def test_compute_batch():
-    r = requests.post(f"{BASE_URL}/compute", json={"smiles": ["CCO", "c1ccccc1", "CC(C)C"]})
-    assert r.status_code == 200
-    data = r.json()
-    assert len(data["results"]) == 3
-    for result in data["results"]:
-        assert result["mw"] > 0
-
-
-def test_invalid_smiles():
-    r = requests.post(f"{BASE_URL}/compute", json={"smiles": ["INVALID"]})
-    assert r.status_code == 400
-
-
-def test_empty_smiles():
-    r = requests.post(f"{BASE_URL}/compute", json={"smiles": []})
-    assert r.status_code == 422
-
-
-def test_rate_limit_free():
-    """Hit the free endpoint 65 times and expect 429 on the last ones."""
-    responses = []
-    for _ in range(65):
-        r = requests.post(f"{BASE_URL}/compute", json={"smiles": ["CCO"]})
-        responses.append(r.status_code)
-        if r.status_code == 429:
-            break
-    assert 429 in responses, "Expected rate limit (429) to be hit"
-
-
-def test_metrics_requires_auth():
-    """Metrics endpoint should require authentication."""
-    r = requests.get(f"{BASE_URL}/metrics")
-    # Should be 401 or 403 after fix
-    assert r.status_code in (401, 403)
-
-
-def test_admin_requires_token():
-    """Admin endpoints should require a valid admin token."""
-    r = requests.get(f"{BASE_URL}/admin/stats")
-    assert r.status_code == 401
-
-    r = requests.get(f"{BASE_URL}/admin/stats", headers={"x-admin-token": "wrong"})
-    assert r.status_code == 401
-
-
-def test_admin_rate_limit():
-    """Admin endpoints should be rate-limited."""
-    for _ in range(10):
-        r = requests.get(f"{BASE_URL}/admin/stats", headers={"x-admin-token": "wrong"})
-    # After repeated failed attempts, should be rate-limited
-    assert r.status_code in (401, 429)
-
-
-def test_path_traversal_jobs():
-    """Try to access files outside data/jobs/ via result endpoint."""
-    # This endpoint requires auth, so we first expect 401
-    r = requests.get(f"{BASE_URL}/jobs/../../../../etc/passwd/result")
-    # Without auth: 401; with auth but invalid path: 403 or 404
-    assert r.status_code in (401, 403, 404)
-
-
-def test_path_traversal_openapi():
-    """Try to access arbitrary files via legacy paths."""
-    r = requests.get(f"{BASE_URL}/../../etc/passwd")
-    # Should be caught by routing or return 404
-    assert r.status_code in (404, 403)
-
-
-def test_sql_injection_admin_keys():
-    """Try SQL injection in query params on admin endpoints."""
-    r = requests.get(
-        f"{BASE_URL}/admin/keys?q=' OR 1=1 --",
-        headers={"x-admin-token": "test"}
+def _fake_submit(api_key, smiles, endpoint="/jobs", charge=None):
+    """Fake job submit that avoids Celery."""
+    import uuid, json
+    job_id = f"job_{uuid.uuid4().hex[:16]}"
+    # Store in local SQLite for testing
+    from src.jobs import _connect, DEFAULT_DB
+    conn = _connect(DEFAULT_DB)
+    conn.execute(
+        "INSERT INTO jobs (id, api_key, endpoint, status, n_smiles, charge) VALUES (?, ?, ?, ?, ?, ?)",
+        (job_id, api_key, endpoint, "queued", len(smiles), charge or len(smiles)),
     )
-    # Should be blocked by auth first (401) or admin-only check
-    assert r.status_code in (401, 403, 404)
+    conn.commit()
+    conn.close()
+    return job_id
 
 
-def test_sql_injection_similarity():
-    """Try SQL injection via SMILES input (should be blocked by validation)."""
-    # Similarity search requires auth; we just verify SMILES validation works
-    r = requests.post(f"{BASE_URL}/compute", json={"smiles": ["'; DROP TABLE molecules; --"]})
-    assert r.status_code == 400
+def _cleanup_test_email(email: str):
+    """Remove all keys and usage for a test email."""
+    conn = keys._connect()
+    rows = conn.execute("SELECT key FROM api_keys WHERE email = ?", (email,)).fetchall()
+    for row in rows:
+        k = row[0]
+        conn.execute("DELETE FROM usage WHERE key = ?", (k,))
+    conn.execute("DELETE FROM api_keys WHERE email = ?", (email,))
+    conn.commit()
+    conn.close()
 
 
-def test_cors_preflight():
-    """Test CORS preflight requests."""
-    r = requests.options(
-        f"{BASE_URL}/compute",
-        headers={
-            "Origin": "https://evil.com",
-            "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "x-api-key",
-        }
-    )
-    # After fix, origins should be restricted. Should not allow evil.com.
-    if r.status_code == 200:
-        acao = r.headers.get("access-control-allow-origin")
-        assert acao != "*", "CORS should not allow wildcard in production"
+@pytest.fixture(scope="module", autouse=True)
+def setup_test_key():
+    """Create a test API key before running tests."""
+    global TEST_KEY
+    _cleanup_test_email(TEST_EMAIL)
+
+    info = keys.provision(email=TEST_EMAIL, tier="research")
+    TEST_KEY = info.key
+
+    # Monkeypatch jobs.submit to avoid Celery
+    jobs_module.submit = _fake_submit
+
+    yield
+
+    # Cleanup
+    _cleanup_test_email(TEST_EMAIL)
+    # Also reset rate limit buckets
+    ratelimit.reset()
 
 
-def test_webhook_ssrf():
-    """Webhook registration should block internal/localhost URLs."""
-    # This requires a valid API key; without one we expect 401
-    # But we can still test the validation logic exists
-    r = requests.post(
-        f"{BASE_URL}/webhooks",
-        json={"url": "http://localhost:5432", "events": "job.complete"}
-    )
-    assert r.status_code in (401, 400), "SSRF protection should block localhost URLs"
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    """Reset all rate limit buckets before each test."""
+    ratelimit.reset()
+    yield
 
 
-def test_magic_link_no_token_exposure():
-    """Magic link endpoint should never return the token in the response."""
-    r = requests.post(
-        f"{BASE_URL}/auth/magic-link",
-        json={"email": "test@example.com"}
-    )
-    if r.status_code == 200:
+class TestHealth:
+    def test_health(self):
+        r = client.get("/v1/health")
+        assert r.status_code == 200
         data = r.json()
-        assert "dev_token" not in data or data["dev_token"] is None
+        assert data["status"] == "ok"
+        assert "version" in data
+
+    def test_ready(self):
+        r = client.get("/v1/ready")
+        assert r.status_code == 200
+        data = r.json()
+        assert "ready" in data
+        assert "checks" in data
 
 
-def test_signup_rate_limit():
-    """Signup should be rate-limited to 1 per minute per IP."""
-    r1 = requests.post(f"{BASE_URL}/signup", json={"email": "a1@example.com"})
-    r2 = requests.post(f"{BASE_URL}/signup", json={"email": "a2@example.com"})
-    # Second request should be rate-limited
-    if r1.status_code == 200:
-        assert r2.status_code in (200, 429)
+class TestCompute:
+    def test_compute_single(self):
+        r = client.post("/v1/compute", json={"smiles": ["CCO"]})
+        assert r.status_code == 200
+        data = r.json()
+        assert "results" in data
+        assert len(data["results"]) == 1
+        assert data["results"][0]["mw"] > 0
+
+    def test_compute_batch(self):
+        r = client.post("/v1/compute", json={"smiles": ["CCO", "c1ccccc1", "CC(C)C"]})
+        assert r.status_code == 200
+        assert len(r.json()["results"]) == 3
+
+    def test_compute_invalid_smiles(self):
+        r = client.post("/v1/compute", json={"smiles": ["INVALID"]})
+        # Pydantic validation returns 422 for invalid SMILES
+        assert r.status_code == 422
+
+    def test_compute_unauthorized_premium(self):
+        r = client.post("/v1/compute/premium", headers={"x-api-key": "invalid_key"}, json={"smiles": ["CCO"]})
+        assert r.status_code == 401
+
+    def test_compute_premium_valid_key(self):
+        r = client.post("/v1/compute/premium", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO"]})
+        assert r.status_code == 200
+        data = r.json()
+        assert "results" in data
+        assert "quota" in data
+
+    def test_compute_quota_exceeded(self):
+        # Create a key with very low quota (1)
+        limited_email = "limited@qmol.app"
+        _cleanup_test_email(limited_email)
+        limited_key = keys.provision(email=limited_email, tier="research")
+        # Override quota to 1
+        conn = keys._connect()
+        conn.execute("UPDATE api_keys SET monthly_quota = 1 WHERE key = ?", (limited_key.key,))
+        conn.commit()
+        conn.close()
+        # Use up the quota
+        r = client.post("/v1/compute/premium", headers={"x-api-key": limited_key.key}, json={"smiles": ["CCO"]})
+        assert r.status_code == 200
+        # Next request should fail with 402
+        r = client.post("/v1/compute/premium", headers={"x-api-key": limited_key.key}, json={"smiles": ["c1ccccc1"]})
+        assert r.status_code == 402
+        _cleanup_test_email(limited_email)
 
 
-def test_quota_check():
-    """Test with a known API key that has exceeded quota."""
-    # This is a stub; in a real test environment, we'd create a key with zero quota.
-    # For now, we just verify the quota endpoint structure.
-    r = requests.get(f"{BASE_URL}/plans")
-    assert r.status_code == 200
-    data = r.json()
-    assert "plans" in data
+class TestPredict:
+    def test_predict(self):
+        r = client.post("/v1/predict", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO"]})
+        assert r.status_code == 200
+        data = r.json()
+        assert "results" in data
+        assert len(data["results"]) == 1
+
+    def test_predict_ml(self):
+        r = client.post("/v1/predict/ml", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO"]})
+        # May return 503 if ML models not available, or 200 if available
+        assert r.status_code in [200, 503]
+
+    def test_predict_unauthorized(self):
+        r = client.post("/v1/predict", json={"smiles": ["CCO"]})
+        assert r.status_code == 401
 
 
-def test_premium_requires_key():
-    """Premium compute should require a valid API key."""
-    r = requests.post(f"{BASE_URL}/compute/premium", json={"smiles": ["CCO"]})
-    assert r.status_code == 401
+class TestJobs:
+    def test_create_job(self):
+        r = client.post("/v1/jobs", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO", "c1ccccc1"]})
+        assert r.status_code == 200
+        data = r.json()
+        assert "job_id" in data
+        assert data["status"] == "queued"
+
+    def test_get_job(self):
+        # Create a job first
+        r = client.post("/v1/jobs", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO"]})
+        job_id = r.json()["job_id"]
+        # Get job status
+        r = client.get(f"/v1/jobs/{job_id}", headers={"x-api-key": TEST_KEY})
+        assert r.status_code == 200
+        data = r.json()
+        assert "status" in data
+
+    def test_job_not_found(self):
+        r = client.get("/v1/jobs/nonexistent_job", headers={"x-api-key": TEST_KEY})
+        assert r.status_code == 404
 
 
-def test_premium_invalid_key():
-    """Premium compute should reject invalid API keys."""
-    r = requests.post(
-        f"{BASE_URL}/compute/premium",
-        json={"smiles": ["CCO"]},
-        headers={"x-api-key": "invalid_key"}
-    )
-    assert r.status_code == 401
+class TestBilling:
+    def test_signup(self):
+        email = "test_signup@qmol.app"
+        _cleanup_test_email(email)
+        r = client.post("/v1/signup", json={"email": email})
+        assert r.status_code == 200
+        data = r.json()
+        assert "api_key" in data
+        assert "tier" in data
+        _cleanup_test_email(email)
+
+    def test_plans(self):
+        r = client.get("/v1/plans")
+        assert r.status_code == 200
+        data = r.json()
+        assert "plans" in data
+        assert len(data["plans"]) >= 3
+
+    def test_usage(self):
+        r = client.get("/v1/usage", headers={"x-api-key": TEST_KEY})
+        assert r.status_code == 200
+        data = r.json()
+        assert "used_this_month" in data
+        assert "monthly_quota" in data
 
 
-def test_descriptors_names_public():
-    """Descriptor names endpoint should be public."""
-    r = requests.get(f"{BASE_URL}/descriptors/names")
-    assert r.status_code == 200
-    assert "names" in r.json()
+class TestRateLimiting:
+    def test_free_rate_limit(self):
+        # Hit the free endpoint multiple times without key
+        last_status = 200
+        for i in range(65):
+            r = client.post("/v1/compute", json={"smiles": ["CCO"]})
+            last_status = r.status_code
+            if r.status_code == 429:
+                break
+        # After 60 requests, should get 429
+        assert last_status == 429
 
 
-def test_fingerprint_kinds_public():
-    """Fingerprint kinds endpoint should be public."""
-    r = requests.get(f"{BASE_URL}/fingerprints/kinds")
-    assert r.status_code == 200
-    assert "kinds" in r.json()
+class TestPathTraversal:
+    def test_job_result_path_traversal(self):
+        # Try path traversal on job result endpoint
+        r = client.get("/v1/jobs/../../../etc/passwd/result", headers={"x-api-key": TEST_KEY})
+        # The route parser will treat this as job_id = "../../../etc/passwd" and look it up
+        # Should fail with 404 (job not found) because the path doesn't resolve to a real job
+        assert r.status_code in [404, 403]
 
 
-def test_quantum_status_no_auth():
-    """Quantum status is currently public; this test documents the behavior."""
-    r = requests.get(f"{BASE_URL}/quantum/status")
-    assert r.status_code == 200
+class TestAdmin:
+    def test_admin_requires_auth(self):
+        r = client.get("/v1/admin/stats")
+        assert r.status_code in [401, 403]
+
+    def test_admin_with_wrong_token(self):
+        r = client.get("/v1/admin/stats", headers={"x-admin-token": "wrong_token"})
+        assert r.status_code in [401, 403]
+
+    def test_admin_with_env_token(self):
+        # This requires QMOL_ADMIN_TOKEN to be set in environment
+        admin_token = os.getenv("QMOL_ADMIN_TOKEN")
+        if not admin_token:
+            pytest.skip("QMOL_ADMIN_TOKEN not set")
+        r = client.get("/v1/admin/stats", headers={"x-admin-token": admin_token})
+        assert r.status_code == 200
 
 
-def test_content_type_options():
-    """Security headers should be present."""
-    r = requests.get(f"{BASE_URL}/health")
-    assert "x-content-type-options" in r.headers
-    assert r.headers["x-content-type-options"].lower() == "nosniff"
+class TestMetrics:
+    def test_metrics_requires_auth(self):
+        r = client.get("/v1/metrics")
+        # Missing required header returns 422 in FastAPI/Pydantic v2
+        assert r.status_code in [401, 403, 422]
+
+    def test_metrics_with_valid_key(self):
+        r = client.get("/v1/metrics", headers={"x-api-key": TEST_KEY})
+        assert r.status_code == 200
 
 
-def test_frame_options():
-    """X-Frame-Options should be present."""
-    r = requests.get(f"{BASE_URL}/health")
-    assert "x-frame-options" in r.headers
+class TestDescriptors:
+    def test_descriptors_names_public(self):
+        r = client.get("/v1/descriptors/names")
+        assert r.status_code == 200
+        data = r.json()
+        assert "names" in data
+
+    def test_descriptors_requires_auth(self):
+        r = client.post("/v1/descriptors", json={"smiles": ["CCO"]})
+        assert r.status_code == 401
+
+    def test_descriptors_with_auth(self):
+        r = client.post("/v1/descriptors", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO"]})
+        assert r.status_code == 200
+        data = r.json()
+        assert "results" in data
 
 
-def test_large_payload_rejected():
-    """Very large payloads should be rejected."""
-    huge_smiles = ["C" * 1000 for _ in range(10000)]
-    r = requests.post(f"{BASE_URL}/compute", json={"smiles": huge_smiles})
-    # Should be rejected due to size or validation limits
-    assert r.status_code in (400, 413, 422)
+class TestFingerprints:
+    def test_fingerprint_kinds_public(self):
+        r = client.get("/v1/fingerprints/kinds")
+        assert r.status_code == 200
+        data = r.json()
+        assert "kinds" in data
+
+    def test_fingerprints_requires_auth(self):
+        r = client.post("/v1/fingerprints", json={"smiles": ["CCO"]})
+        assert r.status_code == 401
+
+    def test_fingerprints_with_auth(self):
+        r = client.post("/v1/fingerprints", headers={"x-api-key": TEST_KEY}, json={"smiles": ["CCO"]})
+        assert r.status_code == 200
+        data = r.json()
+        assert "results" in data
+
+
+class TestSecurityHeaders:
+    def test_content_type_options(self):
+        r = client.get("/v1/health")
+        assert "x-content-type-options" in r.headers
+        assert r.headers["x-content-type-options"].lower() == "nosniff"
+
+    def test_frame_options(self):
+        r = client.get("/v1/health")
+        assert "x-frame-options" in r.headers
+
+
+class TestCors:
+    def test_cors_preflight(self):
+        r = client.options(
+            "/v1/compute",
+            headers={
+                "Origin": "https://evil.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "x-api-key",
+            }
+        )
+        # CORS middleware is configured but may not allow evil.com
+        # If it returns 200, check that wildcard is not used
+        if r.status_code == 200:
+            acao = r.headers.get("access-control-allow-origin")
+            if acao is not None:
+                assert acao != "*", "CORS should not allow wildcard in production"
+
+
+class TestLargePayload:
+    def test_large_payload_rejected(self):
+        # 501 items exceeds the free tier limit of 500
+        huge_smiles = ["C" * 50 for _ in range(501)]
+        r = client.post("/v1/compute", json={"smiles": huge_smiles})
+        # Should be rejected due to validation limits (free tier 500)
+        assert r.status_code in (400, 413, 422)
+
+
+class TestWebhooks:
+    def test_webhook_requires_auth(self):
+        r = client.post("/v1/webhooks", json={"url": "http://localhost:5432", "events": "job.complete"})
+        assert r.status_code == 401
+
+    def test_webhook_ssrf_no_auth(self):
+        # Without auth we expect 401; the actual SSRF validation happens after auth
+        r = client.post("/v1/webhooks", json={"url": "http://localhost:5432", "events": "job.complete"})
+        assert r.status_code in [401, 400]

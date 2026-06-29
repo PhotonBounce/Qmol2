@@ -35,7 +35,7 @@ def alert_catalogs():
 @router.post("/alerts")
 def alerts_endpoint(
     body: AlertsIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Structural-alert screen (PAINS, BRENK, NIH, ZINC)."""
     if not x_api_key:

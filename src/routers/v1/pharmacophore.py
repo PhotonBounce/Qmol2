@@ -27,7 +27,7 @@ class PharmacophoreIn(BaseModel):
 @router.post("/pharmacophore")
 def pharmacophore_endpoint(
     body: PharmacophoreIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Generate 2D pharmacophore fingerprint and feature list."""
     if not x_api_key:
@@ -46,7 +46,7 @@ def pharmacophore_endpoint(
 @router.post("/pharmacophore/3d")
 def pharmacophore_3d_endpoint(
     body: PharmacophoreIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Generate 3D pharmacophore features with coordinates."""
     if not x_api_key:

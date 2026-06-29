@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
-import { useAuthStore } from '@/store/auth';
 import Layout from '@/components/Layout';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
@@ -24,8 +23,6 @@ function LoadingFallback() {
 }
 
 function App() {
-  const apiKey = useAuthStore((s) => s.apiKey);
-
   return (
     <ErrorBoundary>
       <Routes>

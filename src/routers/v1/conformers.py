@@ -32,7 +32,7 @@ class ConformerIn(BaseModel):
 @router.post("/conformers")
 def conformers_endpoint(
     body: ConformerIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Generate ETKDG v3 + MMFF94s-optimized 3D conformer. Charges 10/call."""
     if not x_api_key:

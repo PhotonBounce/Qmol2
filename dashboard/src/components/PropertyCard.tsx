@@ -1,4 +1,4 @@
-import { CheckCircle, AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import type { PropertyDisplay } from '@/types/api';
 
 interface PropertyCardProps {

@@ -29,7 +29,7 @@ class StandardizeIn(BaseModel):
 @router.post("/standardize")
 def standardize_endpoint(
     body: StandardizeIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Salt strip + charge neutralize + canonical tautomer."""
     if not x_api_key:

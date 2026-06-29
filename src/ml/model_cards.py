@@ -23,11 +23,12 @@ MODEL_CARDS: dict[str, dict[str, Any]] = {
             "Useful for early-stage oral-bioavailability filtering."
         ),
         "unit": "log10(mol/L)",
-        "expected_r2": 0.85,
-        "training_set_size": 1144,
+        "expected_r2": 0.892,
+        "actual_rmse": 0.716,
+        "training_set_size": 902,
         "source": "Delaney ESOL + augmented descriptors",
         "model_type": "regressor",
-        "model_version": "onnx-logs-v1",
+        "model_version": "onnx-logs-v2",
         "input_dim": 2068,
         "feature_mode": "concat",
         "citation": "Delaney, J. S. (2004). ESOL: Estimating Aqueous Solubility. J. Chem. Inf. Comput. Sci., 44(3), 1000–1005.",
@@ -51,21 +52,21 @@ MODEL_CARDS: dict[str, dict[str, Any]] = {
         "citation": "Li, H., et al. (2018). J. Chem. Inf. Model., 58(2), 268–277.",
     },
     "herg_risk": {
-        "name": "hERG Cardiac Risk",
+        "name": "hERG Cardiac Risk (pIC50)",
         "description": (
-            "Predicts hERG inhibition risk (low / medium / high). "
-            "Trained on ChEMBL hERG IC50 data with 10 µM threshold."
+            "Predicts hERG inhibition pIC50. "
+            "Trained on synthetic hERG SAR data with 20 RDKit descriptors. "
+            "Pending real ChEMBL data validation."
         ),
-        "unit": "category",
-        "expected_r2": None,  # Balanced accuracy ≈ 0.78
-        "expected_balanced_accuracy": 0.78,
-        "training_set_size": 8420,
-        "source": "ChEMBL hERG IC50 (threshold 10 µM)",
-        "model_type": "classifier",
-        "model_version": "onnx-herg-v1",
+        "unit": "pIC50",
+        "expected_r2": 0.800,
+        "actual_rmse": 0.659,
+        "training_set_size": 960,
+        "source": "Synthetic hERG SAR dataset (pending ChEMBL validation)",
+        "model_type": "regressor",
+        "model_version": "onnx-herg-v2",
         "input_dim": 2068,
         "feature_mode": "concat",
-        "class_labels": ["low", "medium", "high"],
         "citation": "Cheng, F., et al. (2012). J. Chem. Inf. Model., 52(11), 3092–3102.",
     },
     "gi_absorption": {

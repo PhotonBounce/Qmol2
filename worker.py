@@ -78,7 +78,6 @@ def run() -> None:
             cid=rec.cid,
             smiles=rec.smiles,
             basis=config.BASIS_SET,
-            use_vqe_up_to_qubits=config.USE_VQE_UP_TO_QUBITS,
             max_seconds=config.MAX_CPU_SECONDS_PER_MOL,
             mw=rec.mw,
         )

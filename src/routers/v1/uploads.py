@@ -10,7 +10,7 @@ router = APIRouter(tags=["uploads"])
 @router.post("/upload/compute")
 async def upload_compute(
     file: UploadFile = File(...),
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Accept SDF/CSV/SMI, return descriptors."""
     if not x_api_key:

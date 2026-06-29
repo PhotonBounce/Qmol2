@@ -33,7 +33,7 @@ class ChargesIn(BaseModel):
 @router.post("/charges")
 def charges_endpoint(
     body: ChargesIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Gasteiger (PEOE) partial atomic charges."""
     if not x_api_key:

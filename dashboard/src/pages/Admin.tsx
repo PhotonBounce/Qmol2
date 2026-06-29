@@ -9,7 +9,7 @@ import {
   Loader,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
-import type { AdminStats, AuditLogEntry } from '@/types/api';
+import type { AdminStats } from '@/types/api';
 
 // Mock data for demonstration
 const MOCK_STATS: AdminStats = {

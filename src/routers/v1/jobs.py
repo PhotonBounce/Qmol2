@@ -34,7 +34,7 @@ class JobSubmitIn(BaseModel):
 @router.post("/jobs")
 def job_submit(
     body: JobSubmitIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Submit a large batch. Returns job_id."""
     if not x_api_key:
@@ -57,7 +57,7 @@ def job_submit(
 @router.get("/jobs/{job_id}")
 def job_status(
     job_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -77,7 +77,7 @@ def job_status(
 @router.get("/jobs/{job_id}/result")
 def job_result(
     job_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
@@ -102,7 +102,7 @@ def job_result(
 @router.get("/jobs/{job_id}/stream")
 async def job_stream(
     job_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Server-Sent Events streaming real-time job progress."""
     if not x_api_key:
@@ -146,7 +146,7 @@ async def job_stream(
 @router.delete("/jobs/{job_id}")
 def job_cancel(
     job_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Cancel a running job."""
     if not x_api_key:

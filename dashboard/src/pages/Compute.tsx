@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
-  Calculator,
   FileDown,
-  Upload,
   Play,
   AlertCircle,
   CheckCircle,

@@ -28,7 +28,7 @@ class ReactionIn(BaseModel):
 @router.post("/reactions")
 def react_endpoint(
     body: ReactionIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Enumerate a combinatorial library from SMARTS template + reagents."""
     if not x_api_key:

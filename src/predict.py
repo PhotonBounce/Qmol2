@@ -109,6 +109,11 @@ def predict_one(smiles: str) -> Prediction:
     )
 
 
+def predict_batch(smiles: list[str]) -> list[dict]:
+    """Batch heuristic predictions."""
+    return [predict_one(s).to_dict() for s in smiles]
+
+
 def predict_batch_ml(smiles: list[str]) -> list[dict]:
     """Try ONNX ML first; fall back to heuristic predictions with a warning.
 

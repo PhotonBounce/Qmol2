@@ -65,13 +65,16 @@ def extract_rdkit_descriptors(smiles: str) -> np.ndarray:
 
     Returns:
         float32 array of shape (len(RDKIT_DESCRIPTOR_NAMES),).
-        NaN is used for descriptors that fail to compute.
+        NaN is replaced with 0.0 for ML compatibility.
     """
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise ValueError(f"Invalid SMILES: {smiles!r}")
     values = [_descriptor_value(mol, name) for name in RDKIT_DESCRIPTOR_NAMES]
-    return np.array(values, dtype=np.float32)
+    arr = np.array(values, dtype=np.float32)
+    # Replace NaN with 0.0 for models that don't accept missing values
+    arr = np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+    return arr
 
 
 def extract_features(smiles: str, mode: str = "concat") -> np.ndarray:

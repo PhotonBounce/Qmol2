@@ -20,8 +20,10 @@ from contextlib import asynccontextmanager
 from src.middleware import (
     RequestIDMiddleware,
     TimingMiddleware,
-    make_gzip_middleware,
+    MaxBodySizeMiddleware,
+    SecurityHeadersMiddleware,
 )
+from starlette.middleware.gzip import GZipMiddleware
 from src.routers.v1 import v1_router
 from src import scopes as _scopes_mod
 
@@ -70,7 +72,9 @@ app.add_middleware(
 )
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(TimingMiddleware)
-app.add_middleware(make_gzip_middleware())
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+app.add_middleware(MaxBodySizeMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Optional trusted-host middleware (disabled if ALLOWED_HOSTS is empty)
 _allowed_hosts = os.getenv("ALLOWED_HOSTS", "").strip()
@@ -81,34 +85,7 @@ if _allowed_hosts:
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=_hosts)
 
 
-# ------------------------------------------------------------------
-# Security headers middleware
-# ------------------------------------------------------------------
-@app.middleware("http")
-async def _security_headers_middleware(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    # HSTS only when behind HTTPS (detected via X-Forwarded-Proto)
-    if request.headers.get("x-forwarded-proto") == "https":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    return response
-
-
 app.include_router(v1_router)
-
-# ------------------------------------------------------------------
-# GraphQL endpoint (optional — requires strawberry-graphql)
-# ------------------------------------------------------------------
-try:
-    from strawberry.fastapi import GraphQLRouter
-    from src.graphql.schema import schema
-    graphql_router = GraphQLRouter(schema, path="/graphql")
-    app.include_router(graphql_router, prefix="")
-except Exception:
-    pass
-
 
 # ------------------------------------------------------------------
 # Scope middleware (keep same logic as legacy _scope_middleware)

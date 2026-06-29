@@ -29,7 +29,7 @@ class FormulaIn(BaseModel):
 @router.post("/formula")
 def formula_endpoint(
     body: FormulaIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Molecular formula, exact mass, elemental composition, RDBE."""
     if not x_api_key:

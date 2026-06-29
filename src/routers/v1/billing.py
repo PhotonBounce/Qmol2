@@ -55,6 +55,33 @@ class MagicLinkIn(BaseModel):
     email: EmailStr
 
 
+class TrialIn(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"example": {"email": "user@example.com"}})
+    email: str = Field(..., pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+
+
+class EnterpriseContactIn(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "company": "Acme Pharma",
+                "email": "contact@acme.com",
+                "team_size": 50,
+                "use_case": "Virtual screening for oncology pipeline",
+                "budget_range": "$50k-$100k",
+            }
+        }
+    )
+    company: str = Field(..., min_length=1, max_length=255)
+    email: str = Field(..., pattern=r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+    team_size: int = Field(..., ge=1)
+    use_case: str = Field(..., min_length=10, max_length=2000)
+    budget_range: str = Field(
+        "",
+        pattern=r"^(|$1k-$10k|$10k-$50k|$50k-$100k|$100k+)$",
+    )
+
+
 # Tier -> Stripe price env var
 _CHECKOUT_TIERS = {
     "research": "STRIPE_PRICE_RESEARCH",
@@ -202,3 +229,43 @@ def magic_link_redeem(token: str):
     if not api_key:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
     return {"api_key": api_key}
+
+
+@router.post("/trial")
+def start_trial(body: TrialIn):
+    """Start a 7-day free trial (no credit card required)."""
+    email = body.email.strip().lower()
+
+    # Check if this email already had a trial
+    conn = keysdb._connect()
+    cursor = conn.execute(
+        "SELECT created_at FROM api_keys WHERE email = ? AND tier = 'trial'", (email,)
+    )
+    if cursor.fetchone():
+        conn.close()
+        raise HTTPException(400, "Free trial already used for this email")
+    conn.close()
+
+    # Create trial key with Research tier quotas for 7 days
+    key = keysdb.provision(email=email, tier="trial")
+
+    return {
+        "api_key": key.key,
+        "email": email,
+        "tier": "trial",
+        "quota": key.monthly_quota,
+        "trial_days": 7,
+        "message": "Trial expires in 7 days. Upgrade to keep access.",
+    }
+
+
+@router.post("/enterprise/contact")
+def enterprise_contact(body: EnterpriseContactIn):
+    """Submit enterprise contact form."""
+    # Store in database or send email
+    # For now, just log and return confirmation
+    return {
+        "status": "received",
+        "message": "Thank you for your interest. Our sales team will contact you within 24 hours.",
+        "next_steps": "Check your email for a calendar link to schedule a demo.",
+    }

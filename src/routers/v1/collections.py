@@ -4,7 +4,7 @@ from typing import List, Annotated, Any
 
 from src.collections import service as coll_service
 from src import keys as keysdb
-from src.dependencies import check_quota, record_usage
+from src.dependencies import check_quota, record_usage, require_api_key_or_env
 
 router = APIRouter(tags=["collections"])
 
@@ -52,30 +52,22 @@ class ShareIn(BaseModel):
     role: str = Field("viewer", min_length=1)
 
 
-def _require_auth(x_api_key: str | None) -> str:
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="Missing x-api-key header")
-    info = keysdb.lookup(x_api_key)
-    if not info or not info.active:
-        raise HTTPException(status_code=401, detail="Invalid or inactive API key")
-    return x_api_key
-
 
 @router.post("/collections")
 def create_collection(
     body: CollectionCreateIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     c = coll_service.create_collection(key, body.name, body.description)
     return {"collection": c.to_dict()}
 
 
 @router.get("/collections")
 def list_collections(
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     collections = coll_service.list_collections(key)
     return {"collections": [c.to_dict() for c in collections]}
 
@@ -83,9 +75,9 @@ def list_collections(
 @router.get("/collections/{collection_id}")
 def get_collection(
     collection_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access:
         raise HTTPException(status_code=404, detail="Collection not found")
@@ -102,9 +94,9 @@ def get_collection(
 def add_item(
     collection_id: str,
     body: CollectionItemIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role == "viewer":
         raise HTTPException(status_code=403, detail="Not allowed to modify this collection")
@@ -116,9 +108,9 @@ def add_item(
 def remove_item(
     collection_id: str,
     item_id: int,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role == "viewer":
         raise HTTPException(status_code=403, detail="Not allowed to modify this collection")
@@ -132,9 +124,9 @@ def remove_item(
 def update_collection(
     collection_id: str,
     body: CollectionUpdateIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role not in ("owner", "editor"):
         raise HTTPException(status_code=403, detail="Not allowed to modify this collection")
@@ -149,9 +141,9 @@ def update_collection(
 @router.delete("/collections/{collection_id}")
 def delete_collection(
     collection_id: str,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role != "owner":
         raise HTTPException(status_code=403, detail="Only owner can delete")
@@ -165,9 +157,9 @@ def delete_collection(
 def share_collection(
     collection_id: str,
     body: ShareIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role != "owner":
         raise HTTPException(status_code=403, detail="Only owner can share")
@@ -181,9 +173,9 @@ def share_collection(
 def export_collection(
     collection_id: str,
     format: str = "csv",
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
-    key = _require_auth(x_api_key)
+    key = require_api_key_or_env(x_api_key)
     can_access, _ = coll_service.can_access(collection_id, key)
     if not can_access:
         raise HTTPException(status_code=404, detail="Collection not found")

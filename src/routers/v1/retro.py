@@ -32,7 +32,7 @@ class RetroIn(BaseModel):
 @router.post("/retro")
 def retro_endpoint(
     body: RetroIn,
-    x_api_key: Annotated[str | None, Header(default=None)] = None,
+    x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Return plausible 1-step disconnections."""
     if not x_api_key:

@@ -20,6 +20,8 @@ Local test:
 from __future__ import annotations
 import hashlib
 import os
+
+import bcrypt
 import secrets
 import sqlite3
 import time
@@ -28,8 +30,23 @@ from pathlib import Path
 
 DEFAULT_DB = Path(os.getenv("QMOL_KEYS_DB", "data/keys.sqlite"))
 
+PEPPER = os.getenv("API_KEY_PEPPER", "").encode()
+
+
+def _hash_key(key: str) -> bytes:
+    """Hash an API key with bcrypt + optional pepper."""
+    combined = key.encode() + PEPPER
+    return bcrypt.hashpw(combined, bcrypt.gensalt(rounds=12))
+
+
+def _verify_key(key: str, stored_hash: bytes) -> bool:
+    """Verify an API key against a bcrypt hash."""
+    combined = key.encode() + PEPPER
+    return bcrypt.checkpw(combined, stored_hash)
+
 TIER_QUOTA = {
     "free": 500,
+    "trial": 10_000,
     "research": 10_000,
     "commercial": 100_000,
     "redistribution": 1_000_000,
@@ -39,6 +56,7 @@ TIER_QUOTA = {
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS api_keys (
     key           TEXT PRIMARY KEY,
+    key_hash      BLOB,
     email         TEXT NOT NULL,
     tier          TEXT NOT NULL,
     monthly_quota INTEGER NOT NULL,
@@ -98,9 +116,10 @@ def provision(email: str, tier: str = "research", db: Path | None = None) -> Key
         k = row[0]
     else:
         k = _generate(email)
+        key_hash = _hash_key(k)
         conn.execute(
-            "INSERT INTO api_keys (key, email, tier, monthly_quota) VALUES (?,?,?,?)",
-            (k, email, tier, quota),
+            "INSERT INTO api_keys (key, key_hash, email, tier, monthly_quota) VALUES (?,?,?,?,?)",
+            (k, key_hash, email, tier, quota),
         )
         conn.commit()
     conn.close()
@@ -109,15 +128,30 @@ def provision(email: str, tier: str = "research", db: Path | None = None) -> Key
 
 def lookup(key: str, db: Path | None = None) -> KeyInfo | None:
     conn = _connect(db)
+    # Try exact match first (backward compatible with unmigrated keys)
     row = conn.execute(
-        "SELECT key, email, tier, monthly_quota, active FROM api_keys WHERE key=?",
+        "SELECT key, key_hash, email, tier, monthly_quota, active FROM api_keys WHERE key=?",
         (key,),
     ).fetchone()
+    if row:
+        # If there's a hash stored, verify it; otherwise accept exact match
+        if row[1] is not None and not _verify_key(key, row[1]):
+            conn.close()
+            return None
+        conn.close()
+        return KeyInfo(key=row[0], email=row[2], tier=row[3],
+                       monthly_quota=row[4], active=bool(row[5]))
+    # Fallback: verify against all stored hashes (O(N) — acceptable for <1000 keys)
+    cursor = conn.execute(
+        "SELECT key, key_hash, email, tier, monthly_quota, active FROM api_keys WHERE key_hash IS NOT NULL"
+    )
+    for row in cursor.fetchall():
+        if row[1] and _verify_key(key, row[1]):
+            conn.close()
+            return KeyInfo(key=row[0], email=row[2], tier=row[3],
+                           monthly_quota=row[4], active=bool(row[5]))
     conn.close()
-    if not row:
-        return None
-    return KeyInfo(key=row[0], email=row[1], tier=row[2],
-                   monthly_quota=row[3], active=bool(row[4]))
+    return None
 
 
 def month_usage(key: str, db: Path | None = None) -> int:

@@ -22,15 +22,6 @@ interface HistoryItem {
   results: PropertyDisplay[];
 }
 
-const DEFAULT_PROPERTIES: PropertyDisplay[] = [
-  { name: 'Molecular Weight', value: '—', unit: 'g/mol', confidence: 0, inDomain: true, status: 'good', description: 'Monoisotopic mass' },
-  { name: 'logP', value: '—', unit: '', confidence: 0, inDomain: true, status: 'good', description: 'Partition coefficient (octanol/water)' },
-  { name: 'TPSA', value: '—', unit: 'Å²', confidence: 0, inDomain: true, status: 'good', description: 'Topological polar surface area' },
-  { name: 'HBD', value: '—', unit: 'count', confidence: 0, inDomain: true, status: 'good', description: 'Hydrogen bond donors' },
-  { name: 'HBA', value: '—', unit: 'count', confidence: 0, inDomain: true, status: 'good', description: 'Hydrogen bond acceptors' },
-  { name: 'QED', value: '—', unit: '', confidence: 0, inDomain: true, status: 'good', description: 'Quantitative Estimate of Drug-likeness' },
-];
-
 export default function Dashboard() {
   const [smiles, setSmiles] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,7 +66,7 @@ export default function Dashboard() {
       const newResults: PropertyDisplay[] = [
         {
           name: 'Molecular Weight',
-          value: descriptors.MolWt?.toFixed(2) ?? '—',
+          value: (descriptors.MolWt as number)?.toFixed(2) ?? '—',
           unit: 'g/mol',
           confidence: 1,
           inDomain: true,
@@ -84,7 +75,7 @@ export default function Dashboard() {
         },
         {
           name: 'logP',
-          value: descriptors.MolLogP?.toFixed(2) ?? '—',
+          value: (descriptors.MolLogP as number)?.toFixed(2) ?? '—',
           unit: '',
           confidence: 0.9,
           inDomain: (descriptors.MolLogP as number) >= -0.5 && (descriptors.MolLogP as number) <= 5,
@@ -98,7 +89,7 @@ export default function Dashboard() {
         },
         {
           name: 'TPSA',
-          value: descriptors.TPSA?.toFixed(1) ?? '—',
+          value: (descriptors.TPSA as number)?.toFixed(1) ?? '—',
           unit: 'Å²',
           confidence: 1,
           inDomain: true,
@@ -125,7 +116,7 @@ export default function Dashboard() {
         },
         {
           name: 'QED',
-          value: descriptors.qed?.toFixed(3) ?? '—',
+          value: (descriptors.qed as number)?.toFixed(3) ?? '—',
           unit: '',
           confidence: 0.95,
           inDomain: true,

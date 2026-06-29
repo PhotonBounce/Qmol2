@@ -1,20 +1,3 @@
-"""Stripe webhook: auto-deliver the dataset + API key on successful payment.
-
-Deploy as serverless (Vercel/Cloudflare/Lambda) or run as a tiny server.
-
-Env vars:
-  STRIPE_SECRET_KEY
-  STRIPE_WEBHOOK_SECRET
-  QMOL_API_KEY_SECRET       - any random string; used to derive per-buyer API keys
-  DELIVERY_BASE_URL         - e.g. https://your-host/release (presigned S3 or HF)
-  MAILGUN_API_KEY           - optional; if set, an email is sent automatically
-  MAILGUN_DOMAIN
-  MAILGUN_FROM              - "Q-Mol <hi@yourdomain.com>"
-
-Local test:
-  pip install stripe requests
-  python -c "from stripe_webhook import deliver; deliver('buyer@example.com', 'price_commercial')"
-"""
 from __future__ import annotations
 import json
 import os
@@ -24,6 +7,7 @@ try:
 except ImportError:
     stripe = None
 import requests
+from fastapi import HTTPException
 
 from api import make_api_key
 from src import keys as keysdb
@@ -69,15 +53,28 @@ def deliver(email: str, tier_price_id: str) -> dict:
         f"API key (monthly quota: {info.monthly_quota:,} SMILES):\n"
         f"  {api_key}\n\n"
         f"Usage:\n"
-        f'  curl -X POST https://YOUR-API/v1/compute/premium \\\n'
-        f'    -H "x-api-key: {api_key}" \\\n'
-        f'    -H "content-type: application/json" \\\n'
+        f'  curl -X POST https://YOUR-API/v1/compute/premium \\'
+        f'    -H "x-api-key: {api_key}" \\'
+        f'    -H "content-type: application/json" \\'
         f'    -d \'{{"smiles": ["CCO","c1ccccc1"]}}\'\n\n'
         f"Check remaining quota: GET https://YOUR-API/v1/usage  (with same header)\n\n"
         f"Questions? Reply to this email.\n"
     )
     _send_mailgun(email, f"Your Q-Mol {tier} license + API key", body)
     return {"email": email, "tier": tier, "api_key": api_key}
+
+
+def verify_signature(payload, sig_header, secret):
+    """Verify Stripe webhook signature."""
+    if stripe is None:
+        raise HTTPException(400, "Stripe not installed")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, secret)
+        return event
+    except ValueError:
+        raise HTTPException(400, "Invalid payload")
+    except stripe.error.SignatureVerificationError:
+        raise HTTPException(400, "Invalid signature")
 
 
 def handler(request):
@@ -87,9 +84,7 @@ def handler(request):
     sig = request.headers.get("stripe-signature") if hasattr(request, "headers") else None
     payload = request.body if hasattr(request, "body") else b""
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig, os.environ["STRIPE_WEBHOOK_SECRET"]
-        )
+        event = verify_signature(payload, sig, os.environ["STRIPE_WEBHOOK_SECRET"])
     except Exception as e:  # noqa: BLE001
         return {"statusCode": 400, "body": f"bad signature: {e}"}
 

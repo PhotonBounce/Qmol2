@@ -55,9 +55,16 @@ app = FastAPI(
     license_info={"name": "MIT (free tier) / Commercial (paid tiers)"},
 )
 
+# Parse ALLOWED_ORIGINS from env (comma-separated). Empty = no CORS (safest default).
+_allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "").strip()
+if _allowed_origins_str:
+    _allowed_origins = [o.strip() for o in _allowed_origins_str.split(",") if o.strip()]
+else:
+    _allowed_origins = []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -72,6 +79,22 @@ if _allowed_hosts:
     if _hosts:
         from starlette.middleware.trustedhost import TrustedHostMiddleware
         app.add_middleware(TrustedHostMiddleware, allowed_hosts=_hosts)
+
+
+# ------------------------------------------------------------------
+# Security headers middleware
+# ------------------------------------------------------------------
+@app.middleware("http")
+async def _security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # HSTS only when behind HTTPS (detected via X-Forwarded-Proto)
+    if request.headers.get("x-forwarded-proto") == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 
 app.include_router(v1_router)
 
@@ -90,6 +113,10 @@ except Exception:
 # ------------------------------------------------------------------
 # Scope middleware (keep same logic as legacy _scope_middleware)
 # ------------------------------------------------------------------
+import logging
+
+_logger = logging.getLogger("qmol.scope")
+
 @app.middleware("http")
 async def _scope_middleware(request: Request, call_next):
     key = request.headers.get("x-api-key")
@@ -111,8 +138,14 @@ async def _scope_middleware(request: Request, call_next):
                     {"detail": f"API key not permitted for {check_path}"},
                     status_code=403,
                 )
-        except Exception:
-            pass
+        except Exception as exc:
+            # FAIL-CLOSED: if the scope check errors, deny the request
+            _logger.error("Scope check error for key=%s path=%s: %s", key[:12] if key else None, check_path, exc)
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                {"detail": "Scope check failed"},
+                status_code=403,
+            )
     return await call_next(request)
 
 

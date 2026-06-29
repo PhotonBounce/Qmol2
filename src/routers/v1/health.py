@@ -1,8 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
+from typing import Annotated
 
 from src import prom
 from src.schemas import HealthResponse, ReadyResponse
+from src.dependencies import require_api_key_or_env
 
 router = APIRouter(tags=["health"])
 
@@ -37,5 +39,8 @@ async def ready():
 
 
 @router.get("/metrics")
-def prometheus_metrics():
+def prometheus_metrics(
+    _api_key: Annotated[str, Depends(require_api_key_or_env)]
+):
+    """Prometheus metrics — requires authentication."""
     return PlainTextResponse(prom.render(), media_type="text/plain; version=0.0.4")

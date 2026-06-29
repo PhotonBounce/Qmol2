@@ -12,6 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender1 libxext6 libsm6 libglib2.0-0 ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
+# Security: run as non-root user
+RUN groupadd -r qmol && useradd -r -g qmol -d /app qmol \
+ && mkdir -p /app/data /app/logs /app/jobs \
+ && chown -R qmol:qmol /app
+
+USER qmol
+
 COPY requirements.txt ./
 RUN pip install -r requirements.txt \
  && pip install "fastapi>=0.110" "uvicorn>=0.27" "email-validator>=2" "python-multipart>=0.0.20"

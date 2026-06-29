@@ -1,22 +1,41 @@
-.venv/
-.venv*/
+.env
+.env.*
+*.env
+
+# Python
 __pycache__/
 *.pyc
-.pytest_cache/
-.git/
-.gitignore
+.venv/
+venv/
+
+# Data and logs (mount as volumes instead)
 data/
-release/
 logs/
 jobs/
+models/
+
+# Build artifacts
+*.parquet
 *.sqlite
-.env
-.env.example
-smoke_test.py
-build_release.py
-start.bat
-run_worker.bat
-setup.ps1
-packaging/qmol-client/dist/
-packaging/qmol-client/build/
-packaging/qmol-client/*.egg-info/
+*.db
+.DS_Store
+.vscode/
+hf_cache/
+
+# Git
+.git/
+.gitignore
+
+# Docs and tests (optional, depending on image needs)
+docs/
+tests/
+.pytest_cache/
+
+# CI/CD
+.github/
+
+# Secrets and keys
+*.pem
+*.key
+*.crt
+secrets/

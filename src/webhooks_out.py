@@ -4,12 +4,14 @@ Users register a target URL per-key; we POST {job_id, status, result_url}
 on completion. Deliveries are logged and retried up to N times.
 """
 from __future__ import annotations
+import ipaddress
 import json
 import sqlite3
 import threading
 import time
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
 
 try:
     import requests  # type: ignore
@@ -20,6 +22,25 @@ from src import keys as keysdb
 
 MAX_ATTEMPTS = 5
 BACKOFF_BASE = 2.0  # seconds
+
+# Blocklist for SSRF protection: private IP ranges, localhost, metadata endpoints
+_SSRF_BLOCKED_HOSTS = {
+    "localhost", "127.0.0.1", "0.0.0.0",
+    "169.254.169.254",  # AWS metadata
+    "metadata.google.internal",  # GCP metadata
+    "metadata",  # GCP metadata shortname
+}
+_SSRF_BLOCKED_NETWORKS = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    ipaddress.ip_network("127.0.0.0/8"),
+    ipaddress.ip_network("169.254.0.0/16"),
+    ipaddress.ip_network("0.0.0.0/8"),
+    ipaddress.ip_network("::1/128"),
+    ipaddress.ip_network("fc00::/7"),
+    ipaddress.ip_network("fe80::/10"),
+]
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS webhooks (
@@ -56,7 +77,37 @@ def _conn() -> sqlite3.Connection:
     return c
 
 
+def _is_valid_webhook_url(url: str) -> bool:
+    """Validate URL to prevent SSRF attacks."""
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+    # Enforce scheme
+    if parsed.scheme not in ("http", "https"):
+        return False
+    hostname = parsed.hostname
+    if not hostname:
+        return False
+    hostname_lower = hostname.lower()
+    # Check exact blocklist
+    if hostname_lower in _SSRF_BLOCKED_HOSTS:
+        return False
+    # Check blocked networks
+    try:
+        addr = ipaddress.ip_address(hostname)
+        for network in _SSRF_BLOCKED_NETWORKS:
+            if addr in network:
+                return False
+    except ValueError:
+        # hostname is not an IP address, which is fine
+        pass
+    return True
+
+
 def subscribe(api_key: str, url: str, secret: str | None = None) -> Subscription:
+    if not _is_valid_webhook_url(url):
+        raise ValueError(f"Invalid or blocked webhook URL: {url}")
     c = _conn()
     c.execute(
         "INSERT OR REPLACE INTO webhooks (api_key, url, secret) VALUES (?,?,?)",
@@ -103,7 +154,13 @@ def deliver(api_key: str, event: str, payload: dict[str, Any]) -> bool:
     last_err: str | None = None
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
-            r = requests.post(sub.url, data=body, headers=headers, timeout=15)
+            r = requests.post(
+                sub.url,
+                data=body,
+                headers=headers,
+                timeout=(3, 15),  # (connect timeout, read timeout)
+                allow_redirects=False,  # Prevent open redirect abuse
+            )
             last_status = r.status_code
             if 200 <= r.status_code < 300:
                 _log(api_key, sub.url, event, body, attempt, last_status, None, True)

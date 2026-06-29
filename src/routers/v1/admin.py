@@ -1,14 +1,19 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict
 
 from src import metrics, keys as keysdb, result_cache, audit
-from src.dependencies import require_admin
+from src.dependencies import require_admin, _rl, _client_ip
 
 router = APIRouter(tags=["admin"])
 
 
 @router.get("/admin/stats")
-def admin_stats(x_admin_token: str | None = Header(default=None)):
+def admin_stats(
+    request: Request,
+    x_admin_token: str | None = Header(default=None),
+):
+    ip = _client_ip(request)
+    _rl(f"admin:{ip}", limit=5, window=60.0)
     require_admin(x_admin_token)
     try:
         from src import storage
@@ -23,9 +28,12 @@ def admin_stats(x_admin_token: str | None = Header(default=None)):
 
 @router.get("/admin/top-users")
 def admin_top_users(
+    request: Request,
     x_admin_token: str | None = Header(default=None),
     limit: int = 20,
 ):
+    ip = _client_ip(request)
+    _rl(f"admin:{ip}", limit=5, window=60.0)
     require_admin(x_admin_token)
     c = keysdb._connect()
     rows = c.execute(
@@ -43,14 +51,22 @@ def admin_top_users(
 
 @router.get("/admin/history")
 def admin_history(
+    request: Request,
     x_admin_token: str | None = Header(default=None),
     days: int = 30,
 ):
+    ip = _client_ip(request)
+    _rl(f"admin:{ip}", limit=5, window=60.0)
     require_admin(x_admin_token)
     return {"history": metrics.history(limit=days)}
 
 
 @router.get("/admin/cache")
-def admin_cache_stats(x_admin_token: str | None = Header(default=None)):
+def admin_cache_stats(
+    request: Request,
+    x_admin_token: str | None = Header(default=None),
+):
+    ip = _client_ip(request)
+    _rl(f"admin:{ip}", limit=5, window=60.0)
     require_admin(x_admin_token)
     return result_cache.COMPUTE_CACHE.stats()

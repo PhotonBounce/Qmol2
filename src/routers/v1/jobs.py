@@ -39,6 +39,8 @@ def job_submit(
     """Submit a large batch. Returns job_id."""
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
+    from src.dependencies import _rl
+    _rl(f"jobs:{x_api_key}", limit=10, window=60.0)
     info = keysdb.lookup(x_api_key)
     if not info or not info.active:
         raise HTTPException(status_code=401, detail="Invalid or inactive API key")
@@ -87,8 +89,12 @@ def job_result(
     # Critical bug fix: prevent path traversal by validating result_path is inside data/jobs
     result_path = Path(info.result_path).resolve()
     allowed_base = Path(config.DATA_DIR).resolve()
-    if not str(result_path).startswith(str(allowed_base)):
+    try:
+        result_path.relative_to(allowed_base)
+    except ValueError:
         raise HTTPException(status_code=403, detail="Invalid result path")
+    if not result_path.exists():
+        raise HTTPException(status_code=404, detail="Result file not found")
     return FileResponse(result_path, media_type="application/x-jsonlines",
                         filename=f"{job_id}.jsonl")
 

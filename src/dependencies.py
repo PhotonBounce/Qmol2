@@ -5,6 +5,7 @@ that was previously inlined across ~1,800 lines of api.py.
 """
 from __future__ import annotations
 
+import ipaddress
 import os
 from typing import Annotated
 
@@ -21,12 +22,54 @@ API_KEYS = {
 FREE_LIMIT = 500
 PAID_LIMIT = 50_000
 
+# Trusted proxies (CIDR or exact IPs). Only trust X-Forwarded-For from these.
+_TRUSTED_PROXIES = os.getenv("TRUSTED_PROXIES", "").strip()
+_TRUSTED_PROXY_SET = set()
+_TRUSTED_PROXY_NETWORKS = []
+if _TRUSTED_PROXIES:
+    for item in _TRUSTED_PROXIES.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            _TRUSTED_PROXY_NETWORKS.append(ipaddress.ip_network(item, strict=False))
+        except ValueError:
+            _TRUSTED_PROXY_SET.add(item)
+
+
+def _is_trusted_proxy(ip: str) -> bool:
+    """Check if the given IP is a trusted proxy."""
+    if ip in _TRUSTED_PROXY_SET:
+        return True
+    try:
+        addr = ipaddress.ip_address(ip)
+        for network in _TRUSTED_PROXY_NETWORKS:
+            if addr in network:
+                return True
+    except ValueError:
+        pass
+    return False
+
 
 def _client_ip(request: Request) -> str:
+    """Extract client IP, safely handling X-Forwarded-For from trusted proxies only."""
+    direct_ip = request.client.host if request.client else "unknown"
     fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    if fwd and _is_trusted_proxy(direct_ip):
+        # Take the LAST item from X-Forwarded-For (closest to the app)
+        # to prevent spoofing from the client side.
+        parts = [p.strip() for p in fwd.split(",")]
+        # Filter out empty and private IPs, then return the last valid one
+        for part in reversed(parts):
+            if part:
+                try:
+                    addr = ipaddress.ip_address(part)
+                    if not addr.is_private and not addr.is_loopback:
+                        return part
+                except ValueError:
+                    return part
+        return parts[-1] if parts else direct_ip
+    return direct_ip
 
 
 def _require_admin(x_admin_token: str | None) -> None:
@@ -127,7 +170,11 @@ def check_scopes(request: Request, x_api_key: str | None) -> None:
                     detail=f"API key not permitted for {path}",
                 )
         except Exception:
-            pass  # never break the request path on a scope-table error
+            # Fail-closed: deny on scope error
+            raise HTTPException(
+                status_code=403,
+                detail="Scope check failed",
+            )
 
 
 # Internal aliases used by v1 routers

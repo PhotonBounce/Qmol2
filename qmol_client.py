@@ -34,7 +34,7 @@ class Client:
 
     def compute(self, smiles: Sequence[str], premium: bool | None = None) -> list[dict]:
         """Compute descriptors. Auto-picks premium endpoint if api_key is set."""
-        endpoint = "/compute/premium" if (premium or self.api_key) else "/compute"
+        endpoint = "/v1/compute/premium" if (premium or self.api_key) else "/v1/compute"
         r = requests.post(
             self.base + endpoint,
             json={"smiles": list(smiles)},
@@ -60,28 +60,28 @@ class Client:
             yield from self.compute(buf)
 
     def similarity(self, query: str, top_k: int = 10) -> list[dict]:
-        r = requests.post(self.base + "/similarity",
+        r = requests.post(self.base + "/v1/similarity",
                           json={"smiles": query, "top_k": top_k},
                           headers=self._headers(), timeout=self.timeout)
         r.raise_for_status()
         return r.json().get("hits", [])
 
     def screen(self, smiles: Sequence[str]) -> list[dict]:
-        r = requests.post(self.base + "/screen",
+        r = requests.post(self.base + "/v1/screen",
                           json={"smiles": list(smiles)},
                           headers=self._headers(), timeout=self.timeout)
         r.raise_for_status()
         return r.json()["results"]
 
     def standardize(self, smiles: Sequence[str]) -> list[dict]:
-        r = requests.post(self.base + "/standardize",
+        r = requests.post(self.base + "/v1/standardize",
                           json={"smiles": list(smiles)},
                           headers=self._headers(), timeout=self.timeout)
         r.raise_for_status()
         return r.json()["results"]
 
     def predict(self, smiles: Sequence[str]) -> list[dict]:
-        r = requests.post(self.base + "/predict",
+        r = requests.post(self.base + "/v1/predict",
                           json={"smiles": list(smiles)},
                           headers=self._headers(), timeout=self.timeout)
         r.raise_for_status()
@@ -90,7 +90,7 @@ class Client:
     def usage(self) -> dict:
         if not self.api_key:
             raise QmolError("usage() requires an API key")
-        r = requests.get(self.base + "/usage", headers=self._headers(),
+        r = requests.get(self.base + "/v1/usage", headers=self._headers(),
                          timeout=self.timeout)
         r.raise_for_status()
         return r.json()

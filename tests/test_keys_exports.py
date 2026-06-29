@@ -52,7 +52,7 @@ def test_api_premium_uses_db_key(tmp_path, monkeypatch):
 
     client = TestClient(api.app)
     r = client.post(
-        "/compute/premium",
+        "/v1/compute/premium",
         json={"smiles": ["CCO"]},
         headers={"x-api-key": info.key},
     )
@@ -72,7 +72,7 @@ def test_api_quota_exceeded(tmp_path, monkeypatch):
     # pretend they've already used 499
     keysdb.record(info.key, "/compute/premium", 499)
     r = client.post(
-        "/compute/premium",
+        "/v1/compute/premium",
         json={"smiles": ["CCO", "c1ccccc1"]},
         headers={"x-api-key": info.key},
     )
@@ -85,7 +85,7 @@ def test_api_usage_endpoint(tmp_path, monkeypatch):
     info = keysdb.provision("usage@x.com", "commercial")
 
     client = TestClient(api.app)
-    r = client.get("/usage", headers={"x-api-key": info.key})
+    r = client.get("/v1/usage", headers={"x-api-key": info.key})
     assert r.status_code == 200
     assert r.json()["tier"] == "commercial"
     assert r.json()["monthly_quota"] == 100_000
@@ -93,7 +93,7 @@ def test_api_usage_endpoint(tmp_path, monkeypatch):
 
 def test_health():
     client = TestClient(api.app)
-    assert client.get("/health").json() == {"status": "ok"}
+    assert client.get("/v1/health").json() == {"status": "ok"}
 
 
 def test_sdf_and_jsonl_export(tmp_path):

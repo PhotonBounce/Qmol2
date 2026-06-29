@@ -44,3 +44,6 @@ STATE_PATH = DATA_DIR / "state.json"
 
 KEYS_DB_PATH = Path(os.getenv("QMOL_KEYS_DB", DATA_DIR / "keys.sqlite"))
 JOBS_DB_PATH = Path(os.getenv("QMOL_JOBS_DB", DATA_DIR / "jobs.sqlite"))
+
+# TrustedHostMiddleware (comma-separated; empty = disabled)
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "")

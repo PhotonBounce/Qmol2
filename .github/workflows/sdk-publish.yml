@@ -1,0 +1,17 @@
+name: SDK Publish
+on:
+  release:
+    types: [published]
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v $(pwd):/local openapitools/openapi-generator-cli generate -i /local/landing/openapi.json -g python -o /local/sdks/python
+      - run: cd sdks/python && pip install build twine && python -m build && twine upload dist/*
+  typescript:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v $(pwd):/local openapitools/openapi-generator-cli generate -i /local/landing/openapi.json -g typescript-axios -o /local/sdks/typescript
+      - run: cd sdks/typescript && npm install && npm run build && npm publish

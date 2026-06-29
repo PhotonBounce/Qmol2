@@ -42,7 +42,7 @@ def test_ratelimit_blocks_over_limit():
 
 def test_signup_returns_key(isolated_keys):
     client = TestClient(api.app)
-    r = client.post("/signup", json={"email": "new@user.com"})
+    r = client.post("/v1/signup", json={"email": "new@user.com"})
     assert r.status_code == 200
     body = r.json()
     assert body["api_key"].startswith("qmol_")
@@ -52,23 +52,23 @@ def test_signup_returns_key(isolated_keys):
 
 def test_signup_is_idempotent_by_email(isolated_keys):
     client = TestClient(api.app)
-    r1 = client.post("/signup", json={"email": "same@u.com"})
+    r1 = client.post("/v1/signup", json={"email": "same@u.com"})
     ratelimit.reset()  # bypass per-IP throttle so we can re-signup
-    r2 = client.post("/signup", json={"email": "same@u.com"})
+    r2 = client.post("/v1/signup", json={"email": "same@u.com"})
     assert r1.json()["api_key"] == r2.json()["api_key"]
 
 
 def test_signup_rate_limited(isolated_keys):
     client = TestClient(api.app)
-    r1 = client.post("/signup", json={"email": "a@b.com"})
-    r2 = client.post("/signup", json={"email": "c@d.com"})
+    r1 = client.post("/v1/signup", json={"email": "a@b.com"})
+    r2 = client.post("/v1/signup", json={"email": "c@d.com"})
     assert r1.status_code == 200
     assert r2.status_code == 429
 
 
 def test_signup_rejects_bad_email(isolated_keys):
     client = TestClient(api.app)
-    r = client.post("/signup", json={"email": "not-an-email"})
+    r = client.post("/v1/signup", json={"email": "not-an-email"})
     assert r.status_code == 422
 
 

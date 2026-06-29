@@ -15,7 +15,7 @@ runner = CliRunner()
 
 
 def test_root_ok():
-    r = client.get("/")
+    r = client.get("/v1/")
     assert r.status_code == 200
     j = r.json()
     assert j["status"] == "ok"
@@ -23,7 +23,7 @@ def test_root_ok():
 
 
 def test_compute_free_small():
-    r = client.post("/compute", json={"smiles": ["CCO", "c1ccccc1"]})
+    r = client.post("/v1/compute", json={"smiles": ["CCO", "c1ccccc1"]})
     assert r.status_code == 200
     results = r.json()["results"]
     assert len(results) == 2
@@ -32,16 +32,16 @@ def test_compute_free_small():
 
 
 def test_compute_free_limit_exceeded():
-    r = client.post("/compute", json={"smiles": ["CCO"] * 501})
+    r = client.post("/v1/compute", json={"smiles": ["CCO"] * 501})
     assert r.status_code == 413
 
 
 def test_compute_premium_requires_key(monkeypatch):
     monkeypatch.setattr(api, "API_KEYS", {"secret-test-key"})
-    r = client.post("/compute/premium", json={"smiles": ["CCO"]})
+    r = client.post("/v1/compute/premium", json={"smiles": ["CCO"]})
     assert r.status_code == 401
     r = client.post(
-        "/compute/premium",
+        "/v1/compute/premium",
         json={"smiles": ["CCO"]},
         headers={"x-api-key": "secret-test-key"},
     )

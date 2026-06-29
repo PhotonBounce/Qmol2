@@ -69,11 +69,11 @@ def deliver(email: str, tier_price_id: str) -> dict:
         f"API key (monthly quota: {info.monthly_quota:,} SMILES):\n"
         f"  {api_key}\n\n"
         f"Usage:\n"
-        f'  curl -X POST https://YOUR-API/compute/premium \\\n'
+        f'  curl -X POST https://YOUR-API/v1/compute/premium \\\n'
         f'    -H "x-api-key: {api_key}" \\\n'
         f'    -H "content-type: application/json" \\\n'
         f'    -d \'{{"smiles": ["CCO","c1ccccc1"]}}\'\n\n'
-        f"Check remaining quota: GET https://YOUR-API/usage  (with same header)\n\n"
+        f"Check remaining quota: GET https://YOUR-API/v1/usage  (with same header)\n\n"
         f"Questions? Reply to this email.\n"
     )
     _send_mailgun(email, f"Your Q-Mol {tier} license + API key", body)

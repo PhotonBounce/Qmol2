@@ -21,6 +21,13 @@ python-dotenv>=1.0
 # Scheduling
 apscheduler>=3.10
 
+# Database (PostgreSQL + SQLite fallback)
+asyncpg>=0.29
+sqlalchemy[asyncio]>=2.0
+alembic>=1.13
+redis>=5.0
+psycopg2-binary>=2.9
+
 # Marketplace publishers (optional but cheap to install)
 kaggle>=1.6
 

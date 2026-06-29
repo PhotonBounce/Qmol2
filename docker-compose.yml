@@ -1,21 +1,60 @@
 version: "3.9"
 services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: qmol
+      POSTGRES_PASSWORD: qmol
+      POSTGRES_DB: qmol
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qmol"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   qmol:
     build: .
     image: qmol-api:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
-    volumes:
-      - qmol-data:/data
-      - ./logs:/app/logs
-      - ./jobs:/app/jobs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
+      - USE_POSTGRES=true
+      - DATABASE_URL=postgresql+asyncpg://qmol:qmol@postgres:5432/qmol
+      - REDIS_URL=redis://redis:6379/0
       - QMOL_ADMIN_TOKEN=${QMOL_ADMIN_TOKEN:-change-me}
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
       - MAILGUN_API_KEY=${MAILGUN_API_KEY:-}
       - MAILGUN_DOMAIN=${MAILGUN_DOMAIN:-}
+      - MAILGUN_FROM=${MAILGUN_FROM:-Q-Mol <hi@yourdomain.com>}
+    volumes:
+      - qmol-data:/data
+      - ./logs:/app/logs
+      - ./jobs:/app/jobs
 
 volumes:
+  postgres-data:
+  redis-data:
   qmol-data:

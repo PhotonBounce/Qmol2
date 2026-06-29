@@ -25,6 +25,22 @@ MAX_CPU_SECONDS_PER_MOL = int(os.getenv("MAX_CPU_SECONDS_PER_MOL", "120"))
 PUBLISH_EVERY_N_MOLECULES = int(os.getenv("PUBLISH_EVERY_N_MOLECULES", "100"))
 SNAPSHOT_EVERY_HOURS = int(os.getenv("SNAPSHOT_EVERY_HOURS", "6"))
 
+# Database mode: PostgreSQL for production, SQLite for dev
+USE_POSTGRES = os.getenv("USE_POSTGRES", "false").lower() == "true"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://qmol:qmol@localhost:5432/qmol")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# Async PostgreSQL URL (ensure +asyncpg driver)
+ASYNC_DATABASE_URL = DATABASE_URL
+if ASYNC_DATABASE_URL.startswith("postgresql+psycopg2://"):
+    ASYNC_DATABASE_URL = ASYNC_DATABASE_URL.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+elif ASYNC_DATABASE_URL.startswith("postgresql://"):
+    ASYNC_DATABASE_URL = ASYNC_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+# SQLite fallback paths (used when USE_POSTGRES=false)
 DB_PATH = DATA_DIR / "qmol.sqlite"
 PARQUET_PATH = DATA_DIR / "qmol.parquet"
 STATE_PATH = DATA_DIR / "state.json"
+
+KEYS_DB_PATH = Path(os.getenv("QMOL_KEYS_DB", DATA_DIR / "keys.sqlite"))
+JOBS_DB_PATH = Path(os.getenv("QMOL_JOBS_DB", DATA_DIR / "jobs.sqlite"))

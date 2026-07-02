@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Mol Auto-Harvest</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; display:flex; }
+  .sidebar { width:260px; background:#1e293b; border-right:1px solid #334155; padding:24px; }
+  .sidebar h1 { font-size:20px; font-weight:700; color:#f8fafc; margin-bottom:4px; }
+  .sidebar .subtitle { font-size:12px; color:#94a3b8; margin-bottom:32px; }
+  .sidebar .nav-btn { display:block; width:100%; padding:12px 16px; margin-bottom:8px; border:none; border-radius:8px; background:transparent; color:#cbd5e1; font-size:14px; text-align:left; cursor:pointer; transition:all .15s; }
+  .sidebar .nav-btn:hover { background:#334155; color:#fff; }
+  .sidebar .nav-btn.active { background:#2563eb; color:#fff; font-weight:600; }
+  .sidebar .nav-btn .badge { float:right; background:#334155; color:#94a3b8; font-size:10px; padding:2px 8px; border-radius:999px; }
+  .sidebar .nav-btn.active .badge { background:#1d4ed8; color:#fff; }
+  .main { flex:1; padding:32px; overflow:auto; }
+  .card { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:24px; margin-bottom:24px; }
+  .card h2 { font-size:18px; font-weight:600; color:#f8fafc; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .stats-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; }
+  .stat-box { background:#0f172a; border:1px solid #334155; border-radius:8px; padding:20px; }
+  .stat-box .value { font-size:28px; font-weight:700; color:#38bdf8; }
+  .stat-box .label { font-size:12px; color:#94a3b8; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; }
+  .stat-box .change { font-size:12px; margin-top:8px; }
+  .change.up { color:#4ade80; }
+  .change.down { color:#f87171; }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+  .btn-danger { background:#dc2626; color:#fff; }
+  .btn-danger:hover { background:#b91c1c; }
+  .btn-secondary { background:#334155; color:#fff; }
+  .btn-secondary:hover { background:#475569; }
+  .btn-group { display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; }
+  .progress { background:#0f172a; border:1px solid #334155; border-radius:8px; height:32px; overflow:hidden; margin-top:16px; position:relative; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#2563eb,#38bdf8); transition:width .3s; width:0; }
+  .progress-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; }
+  .log { background:#0f172a; border:1px solid #334155; border-radius:8px; padding:16px; font-family:monospace; font-size:12px; line-height:1.6; max-height:300px; overflow-y:auto; margin-top:16px; }
+  .log-entry { margin-bottom:2px; }
+  .log-entry.ok { color:#4ade80; }
+  .log-entry.warn { color:#fbbf24; }
+  .log-entry.err { color:#f87171; }
+  .form-row { margin-bottom:16px; }
+  .form-row label { display:block; font-size:13px; color:#94a3b8; margin-bottom:6px; }
+  .form-row input, .form-row select { width:100%; padding:10px 12px; border:1px solid #334155; border-radius:8px; background:#0f172a; color:#e2e8f0; font-size:14px; }
+  .form-row input:focus, .form-row select:focus { outline:none; border-color:#2563eb; }
+  .dataset-preview { background:#0f172a; border:1px solid #334155; border-radius:8px; padding:16px; margin-top:16px; font-family:monospace; font-size:12px; overflow:auto; max-height:200px; }
+  .hidden { display:none; }
+  .source-pills { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .pill { padding:6px 14px; border-radius:999px; font-size:12px; font-weight:500; cursor:pointer; border:1px solid #334155; background:#0f172a; color:#cbd5e1; transition:all .15s; }
+  .pill.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+  .pill .count { opacity:0.7; margin-left:4px; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <h1>Q-Mol Auto-Harvest</h1>
+  <div class="subtitle">Admin Control Panel</div>
+  <button class="nav-btn active" onclick="showTab('harvest')">Harvest</button>
+  <button class="nav-btn" onclick="showTab('datasets')">Datasets <span class="badge" id="dsCount">0</span></button>
+  <button class="nav-btn" onclick="showTab('settings')">Settings</button>
+  <div style="margin-top:auto; padding-top:24px; border-top:1px solid #334155; margin-top:32px;">
+    <div class="subtitle" style="margin-bottom:8px;">API Status</div>
+    <div id="apiStatus" style="font-size:13px; color:#4ade80;">Checking...</div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- HARVEST TAB -->
+  <div id="tab-harvest">
+    <div class="card">
+      <h2>Harvest Stats</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="value" id="statTotal">0</div>
+          <div class="label">Total Molecules</div>
+          <div class="change up" id="statTotalChange">+0</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="statUnique">0</div>
+          <div class="label">Unique (InChIKey)</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="statLipinski">0</div>
+          <div class="label">Lipinski Pass</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="statQED">0</div>
+          <div class="label">High QED (>=0.7)</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="statLast7d">0</div>
+          <div class="label">Last 7 Days</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="statSource">0</div>
+          <div class="label">Sources</div>
+        </div>
+      </div>
+      <div class="progress" style="margin-top:20px;">
+        <div class="progress-fill" id="harvestProgress" style="width:0%"></div>
+        <div class="progress-text" id="harvestProgressText">Ready</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Auto-Harvest</h2>
+      <p style="font-size:14px; color:#94a3b8; margin-bottom:16px;">Select sources and click Start. The system will automatically submit molecules to your API and collect them into the harvest database.</p>
+
+      <div class="source-pills">
+        <button class="pill active" onclick="togglePill(this,'drugs')">Drugs <span class="count">100</span></button>
+        <button class="pill active" onclick="togglePill(this,'scaffolds')">Scaffolds <span class="count">50</span></button>
+        <button class="pill active" onclick="togglePill(this,'natural')">Natural Products <span class="count">50</span></button>
+        <button class="pill active" onclick="togglePill(this,'fragments')">Fragments <span class="count">50</span></button>
+        <button class="pill" onclick="togglePill(this,'generate')">Generate Random <span class="count">∞</span></button>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btnStart" onclick="startHarvest()">▶ Start Auto-Harvest</button>
+        <button class="btn btn-danger hidden" id="btnStop" onclick="stopHarvest()">⏹ Stop</button>
+        <button class="btn btn-secondary" onclick="harvestBatch(10)">Harvest 10</button>
+        <button class="btn btn-secondary" onclick="harvestBatch(100)">Harvest 100</button>
+        <button class="btn btn-secondary" onclick="harvestBatch(500)">Harvest 500</button>
+      </div>
+
+      <div class="log" id="harvestLog">
+        <div class="log-entry">Waiting to start...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATASETS TAB -->
+  <div id="tab-datasets" class="hidden">
+    <div class="card">
+      <h2>Create Dataset</h2>
+      <div class="form-row">
+        <label>Dataset Name</label>
+        <input id="dsName" value="High-QED Drug Candidates">
+      </div>
+      <div class="form-row">
+        <label>Description</label>
+        <input id="dsDesc" value="Molecules with QED >= 0.7, Lipinski pass, no PAINS">
+      </div>
+      <div class="form-row">
+        <label>Filter SQL</label>
+        <input id="dsFilter" value="qed >= 0.7 AND lipinski_pass = 1 AND pains_hit = 0">
+      </div>
+      <div class="form-row">
+        <label>Max Molecules</label>
+        <input id="dsMax" type="number" value="10000">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="createDataset()">Create Dataset</button>
+      </div>
+      <div class="dataset-preview hidden" id="dsPreview"></div>
+    </div>
+
+    <div class="card">
+      <h2>Export</h2>
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="exportDataset('csv')">Export CSV</button>
+        <button class="btn btn-secondary" onclick="exportDataset('sdf')">Export SDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="tab-settings" class="hidden">
+    <div class="card">
+      <h2>API Configuration</h2>
+      <div class="form-row">
+        <label>API Base URL</label>
+        <input id="apiUrl" value="http://localhost:8000/v1">
+      </div>
+      <div class="form-row">
+        <label>API Key (for harvesting)</label>
+        <input id="apiKey" placeholder="qmol_..." type="password">
+      </div>
+      <div class="form-row">
+        <label>Admin Token</label>
+        <input id="adminToken" placeholder="Your admin token..." type="password">
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+      </div>
+      <div id="connResult" style="margin-top:12px; font-size:13px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+let CONFIG = {
+  apiUrl: localStorage.getItem('harvest_apiUrl') || 'http://localhost:8000/v1',
+  apiKey: localStorage.getItem('harvest_apiKey') || '',
+  adminToken: localStorage.getItem('harvest_adminToken') || '',
+};
+
+let HARVESTING = false;
+let HARVEST_COUNT = 0;
+let HARVEST_TARGET = 0;
+let HARVEST_QUEUE = [];
+let LAST_STATS = {};
+
+// ==================== MOLECULE LIBRARY ====================
+const MOLECULES = {
+  drugs: [
+    "CC(=O)Oc1ccccc1C(=O)O","CC(C)Cc1ccc(cc1)C(C)C(=O)O","CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+    "CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","CC(C)NCC(O)COc1ccccc1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1",
+    "Cc1ccc(C)c(Oc2ccccc2)c1","CC(C)NCC(O)COc1ccccc1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+  ],
+  scaffolds: [
+    "c1ccccc1","c1ccc2ccccc2c1","c1ccc2ncncc2c1","c1ccc2c(c1)[nH]c1ccccc12",
+    "c1c[nH]cn1","c1ccc(cc1)S(=O)(=O)N","C1CCOC1","C1CCNCC1","C1CNC1",
+    "O=C1NC=NC2=CC=CC=C12","c1ccc(cc1)c2ccccc2","c1ccc2occc2c1",
+    "c1ccc2ncccc2c1","c1ccc2ccccc2c1","c1ccc2[nH]ccc2c1",
+    "c1ccc2scnc2c1","c1ccc2ccsc2c1","c1ccc2oncc2c1",
+    "c1ccc2cscc2c1","c1ccc2nccs2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccnc2c1","c1ccc2ocnc2c1","c1ccc2nncc2c1",
+    "c1ccc2ccsc2c1","c1ccc2cocc2c1","c1ccc2ncoc2c1",
+    "c1ccc2cnoc2c1","c1ccc2ccoc2c1","c1ccc2ccnc2c1",
+    "c1ccc2occc2c1","c1ccc2ccco2c1","c1ccc2ccco2c1",
+    "c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1",
+    "c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1",
+    "c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccco2c1","c1ccc2ccoc2c1",
+  ],
+  natural: [
+    "C1=CC(=O)C=CC1=O","CC1=CC(=O)CC(C)(C)C1","C1CC2CCC3C(C2C1)CC(C3)C",
+    "C1=COC=C1","C1=CC=CC=C1O","CC(C)=CCC=C(C)C","C1=CC=C(C=C1)C2=CC=CC=C2",
+    "C1=CC2=C(C=C1O)OCO2","C1=C(C=C(C=C1O)O)O","CC(C)C1=CC=C(C=C1)O",
+    "CC1=CC=C(C=C1)O","C1=CC=C(C=C1)C=O","C1=CC=C(C=C1)C(=O)O",
+    "C1=CC=C(C=C1)C(=O)OC","C1=CC=C(C=C1)C(=O)N","C1=CC=C(C=C1)C#N",
+    "C1=CC=C(C=C1)CCl","C1=CC=C(C=C1)CBr","C1=CC=C(C=C1)CI",
+    "C1=CC=C(C=C1)CF","C1=CC=C(C=C1)CC(=O)O","C1=CC=C(C=C1)CCN",
+    "C1=CC=C(C=C1)CCO","C1=CC=C(C=C1)CCCl","C1=CC=C(C=C1)CCBr",
+    "C1=CC=C(C=C1)CCF","C1=CC=C(C=C1)CCC(=O)O","C1=CC=C(C=C1)CCCN",
+    "C1=CC=C(C=C1)CCCO","C1=CC=C(C=C1)CCCCl","C1=CC=C(C=C1)CCCBr",
+    "C1=CC=C(C=C1)CCCF","C1=CC=C(C=C1)CCCC(=O)O","C1=CC=C(C=C1)CCCCN",
+    "C1=CC=C(C=C1)CCCCO","C1=CC=C(C=C1)CCCCCl","C1=CC=C(C=C1)CCCCBr",
+    "C1=CC=C(C=C1)CCCCF","C1=CC=C(C=C1)CCCCC(=O)O","C1=CC=C(C=C1)CCCCCN",
+    "C1=CC=C(C=C1)CCCCCO","C1=CC=C(C=C1)CCCCCCl","C1=CC=C(C=C1)CCCCCBr",
+    "C1=CC=C(C=C1)CCCCCF",
+  ],
+  fragments: [
+    "CCO","CC(=O)O","CC(C)O","c1ccncc1","C1CCCCC1","CCN","CC(C)=O",
+    "CC(=O)NC","c1ccccc1O","c1ccccc1N","CCCl","CCBr","CCI","CCF",
+    "CCOCC","CCSCC","CCN(C)C","CC(=O)OC","CC(=O)Cl","CC(=O)Br",
+    "CC(=O)I","CC(=O)F","CCN(CC)CC","CC(C)N","CC(C)C","CCC",
+    "CCCC","CCCCC","CCCCCC","CCCCCCC","CCCCCCCC","CCCCCCCCC",
+    "CCCCCCCCCC","CCCCCCCCCCC","CCCCCCCCCCCC","CCCCCCCCCCCCC",
+    "CCCCCCCCCCCCCC","CCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCC",
+    "CCCCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCCCC",
+  ],
+};
+
+// ==================== UI ====================
+function showTab(id) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-' + id).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (id === 'datasets') loadDatasets();
+  if (id === 'harvest') fetchStats();
+}
+
+function togglePill(el, source) {
+  el.classList.toggle('active');
+}
+
+function log(msg, type='ok') {
+  const box = document.getElementById('harvestLog');
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.textContent = new Date().toLocaleTimeString() + ' ' + msg;
+  box.appendChild(entry);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ==================== API ====================
+async function apiPost(endpoint, data) {
+  const r = await fetch(CONFIG.apiUrl + endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': CONFIG.apiKey },
+    body: JSON.stringify(data)
+  });
+  if (!r.ok) throw new Error(r.status + ' ' + await r.text());
+  return r.json();
+}
+
+async function apiGet(endpoint, admin=false) {
+  const headers = {};
+  if (admin && CONFIG.adminToken) headers['x-admin-token'] = CONFIG.adminToken;
+  const r = await fetch(CONFIG.apiUrl + endpoint, { headers });
+  if (!r.ok) throw new Error(r.status + ' ' + await r.text());
+  return r.json();
+}
+
+async function testConnection() {
+  try {
+    const data = await apiGet('/health');
+    document.getElementById('connResult').innerHTML = '<span style="color:#4ade80">Connected! API v' + data.version + '</span>';
+    document.getElementById('apiStatus').textContent = 'Online';
+  } catch (e) {
+    document.getElementById('connResult').innerHTML = '<span style="color:#f87171">Failed: ' + e.message + '</span>';
+    document.getElementById('apiStatus').textContent = 'Offline';
+  }
+}
+
+async function fetchStats() {
+  try {
+    const data = await apiGet('/harvest/stats', true);
+    LAST_STATS = data;
+    document.getElementById('statTotal').textContent = data.total_molecules || 0;
+    document.getElementById('statUnique').textContent = data.unique_by_inchikey || 0;
+    document.getElementById('statLipinski').textContent = data.lipinski_pass || 0;
+    document.getElementById('statQED').textContent = data.qed_good || 0;
+    document.getElementById('statLast7d').textContent = data.last_7_days || 0;
+    document.getElementById('statSource').textContent = Object.keys(data.by_source || {}).length;
+  } catch (e) {
+    console.log('Stats fetch failed:', e.message);
+  }
+}
+
+// ==================== HARVESTING ====================
+let activeSources = new Set(['drugs','scaffolds','natural','fragments']);
+
+function getActiveMolecules() {
+  const pool = [];
+  document.querySelectorAll('.pill.active').forEach(p => {
+    const src = p.textContent.split(' ')[0].toLowerCase();
+    if (src === 'drugs') pool.push(...MOLECULES.drugs);
+    if (src === 'scaffolds') pool.push(...MOLECULES.scaffolds);
+    if (src === 'natural') pool.push(...MOLECULES.natural);
+    if (src === 'fragments') pool.push(...MOLECULES.fragments);
+  });
+  // Shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+}
+
+function generateRandomSMILES() {
+  const atoms = ['C','C','C','N','O','S','F','Cl','Br'];
+  const bonds = ['','','','=','#'];
+  let s = '';
+  const len = 3 + Math.floor(Math.random() * 8);
+  for (let i = 0; i < len; i++) {
+    s += atoms[Math.floor(Math.random() * atoms.length)];
+    if (Math.random() > 0.5) s += bonds[Math.floor(Math.random() * bonds.length)];
+  }
+  // Try to make it somewhat valid
+  if (Math.random() > 0.7) s += 'c1ccccc1';
+  return s;
+}
+
+async function submitOne(smi, endpoint) {
+  try {
+    if (endpoint === 'similarity') {
+      await apiPost('/similarity', { smiles: smi, neighbors: 5 });
+    } else {
+      await apiPost(endpoint, { smiles: [smi] });
+    }
+    return true;
+  } catch (e) {
+    if (e.message.includes('402')) {
+      log('Quota exceeded (402). Stopping.', 'err');
+      HARVESTING = false;
+    }
+    return false;
+  }
+}
+
+async function startHarvest() {
+  HARVESTING = true;
+  HARVEST_COUNT = 0;
+  document.getElementById('btnStart').classList.add('hidden');
+  document.getElementById('btnStop').classList.remove('hidden');
+  log('Auto-harvest started...');
+
+  const pool = getActiveMolecules();
+  const generate = document.querySelector('.pill.active')?.textContent.includes('Generate');
+  let idx = 0;
+
+  while (HARVESTING) {
+    let smi;
+    if (idx < pool.length) {
+      smi = pool[idx];
+    } else if (generate) {
+      smi = generateRandomSMILES();
+    } else {
+      idx = 0; // Loop back
+      smi = pool[idx];
+    }
+    idx++;
+
+    const endpoint = ['compute','screen','predict','similarity'][Math.floor(Math.random() * 4)];
+    const ok = await submitOne(smi, endpoint);
+    if (ok) HARVEST_COUNT++;
+
+    // Update progress
+    const pct = Math.min((HARVEST_COUNT / 500) * 100, 100);
+    document.getElementById('harvestProgress').style.width = pct + '%';
+    document.getElementById('harvestProgressText').textContent = HARVEST_COUNT + ' molecules harvested';
+    if (HARVEST_COUNT % 10 === 0) log('Harvested ' + HARVEST_COUNT + ' molecules');
+
+    // Poll stats every 25
+    if (HARVEST_COUNT % 25 === 0) await fetchStats();
+
+    // Rate limit: 1 per second
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  document.getElementById('btnStart').classList.remove('hidden');
+  document.getElementById('btnStop').classList.add('hidden');
+  log('Auto-harvest stopped. Total: ' + HARVEST_COUNT);
+  await fetchStats();
+}
+
+function stopHarvest() {
+  HARVESTING = false;
+  log('Stopping...', 'warn');
+}
+
+async function harvestBatch(n) {
+  log('Harvesting ' + n + ' molecules...');
+  const pool = getActiveMolecules();
+  let count = 0;
+  for (let i = 0; i < n && i < pool.length; i++) {
+    const endpoint = ['compute','screen','predict'][Math.floor(Math.random() * 3)];
+    const ok = await submitOne(pool[i], endpoint);
+    if (ok) count++;
+    document.getElementById('harvestProgress').style.width = Math.min((count / n) * 100, 100) + '%';
+    document.getElementById('harvestProgressText').textContent = count + ' / ' + n;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  log('Batch complete: ' + count + ' / ' + n);
+  await fetchStats();
+}
+
+// ==================== DATASETS ====================
+async function createDataset() {
+  const name = document.getElementById('dsName').value;
+  const desc = document.getElementById('dsDesc').value;
+  const filter = document.getElementById('dsFilter').value;
+  const max = parseInt(document.getElementById('dsMax').value);
+
+  try {
+    const r = await fetch(CONFIG.apiUrl + '/harvest/datasets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': CONFIG.adminToken },
+      body: JSON.stringify({ name: name, description: desc, filter_sql: filter, max_molecules: max })
+    });
+    const data = await r.json();
+    document.getElementById('dsPreview').classList.remove('hidden');
+    document.getElementById('dsPreview').textContent = JSON.stringify(data, null, 2);
+    log('Dataset #' + data.dataset_id + ' created: ' + data.molecule_count + ' molecules, $' + data.price_usd);
+  } catch (e) {
+    log('Dataset creation failed: ' + e.message, 'err');
+  }
+}
+
+async function exportDataset(fmt) {
+  // Hardcoded dataset ID 1 for now
+  try {
+    const r = await fetch(CONFIG.apiUrl + '/harvest/datasets/1/csv', {
+      headers: { 'x-admin-token': CONFIG.adminToken }
+    });
+    const csv = await r.text();
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'qmol_dataset_1.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    log('Dataset exported as CSV');
+  } catch (e) {
+    log('Export failed: ' + e.message, 'err');
+  }
+}
+
+// ==================== SETTINGS ====================
+function saveSettings() {
+  CONFIG.apiUrl = document.getElementById('apiUrl').value;
+  CONFIG.apiKey = document.getElementById('apiKey').value;
+  CONFIG.adminToken = document.getElementById('adminToken').value;
+  localStorage.setItem('harvest_apiUrl', CONFIG.apiUrl);
+  localStorage.setItem('harvest_apiKey', CONFIG.apiKey);
+  localStorage.setItem('harvest_adminToken', CONFIG.adminToken);
+  log('Settings saved');
+}
+
+function loadSettings() {
+  document.getElementById('apiUrl').value = CONFIG.apiUrl;
+  document.getElementById('apiKey').value = CONFIG.apiKey;
+  document.getElementById('adminToken').value = CONFIG.adminToken;
+}
+
+// ==================== INIT ====================
+loadSettings();
+testConnection();
+fetchStats();
+setInterval(fetchStats, 10000); // Auto-refresh stats every 10s
+</script>
+</body>
+</html>

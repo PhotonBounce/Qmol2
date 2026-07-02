@@ -1,0 +1,62 @@
+# ComputeSwarm Production Dockerfile
+# Multi-stage build: smaller image, no dev dependencies, non-root user.
+
+# ============================================================================
+# Stage 1: Builder
+# ============================================================================
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies into a user-local directory
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ============================================================================
+# Stage 2: Production Runner
+# ============================================================================
+FROM python:3.11-slim AS production
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH=/root/.local/bin:$PATH
+
+WORKDIR /app
+
+# Install runtime dependencies (libpq5 + curl for healthchecks)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copy installed Python packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application code
+COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+COPY scripts/ ./scripts/
+
+# Set permissions
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Production: Gunicorn with Uvicorn workers
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-", "app.main:app"]

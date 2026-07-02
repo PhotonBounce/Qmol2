@@ -1,0 +1,26 @@
+Dockerfile
+.venv
+venv
+__pycache__
+*.pyc
+*.pyo
+.env
+.env.local
+.env.prod
+*.egg-info
+.pytest_cache
+mypy_cache
+.ruff_cache
+.git
+.gitignore
+README.md
+CHANGELOG.md
+VERSION
+LICENSE
+.github
+
+# Data directories (not needed in build context)
+postgres_data/
+redis_data/
+minio_data/
+letsencrypt_data/

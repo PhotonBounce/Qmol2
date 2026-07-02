@@ -1,0 +1,42 @@
+# ============================================================================
+# Traefik Static Configuration (traefik.yml)
+# ============================================================================
+# Loaded by the Traefik container via --configFile.
+# This file defines entrypoints, certificate resolvers, and providers.
+# ============================================================================
+
+api:
+  dashboard: false
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: computeswarm-network
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@example.com
+      storage: /letsencrypt/acme.json
+      tlsChallenge: {}
+
+log:
+  level: INFO
+
+accessLog: {}

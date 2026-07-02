@@ -1,0 +1,15 @@
+Dockerfile
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.env
+.git
+.gitignore
+README.md
+CHANGELOG.md
+VERSION
+LICENSE
+.github
+*.log

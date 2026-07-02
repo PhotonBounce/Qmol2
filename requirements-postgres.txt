@@ -1,0 +1,19 @@
+# Q-Mol PostgreSQL Add-ons
+# ========================
+# Install AFTER requirements.txt:
+#   pip install -r requirements.txt
+#   pip install -r requirements-postgres.txt
+
+# PostgreSQL async driver
+asyncpg>=0.29
+psycopg2-binary>=2.9
+
+# Database migrations
+alembic>=1.13
+
+# Redis (caching, rate limiting, job progress)
+redis>=5.0
+
+# Celery distributed task queue + monitoring
+celery>=5.3
+flower>=2.0

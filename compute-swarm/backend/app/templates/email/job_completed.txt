@@ -1,0 +1,13 @@
+Hi there,
+
+Your job "{{ job_name }}" has completed successfully.
+
+You can download the results from the dashboard or via the API.
+
+Dashboard: {{ dashboard_url }}
+
+Thanks for using ComputeSwarm!
+
+---
+ComputeSwarm — Distributed Scientific Computing
+https://github.com/your-org/compute-swarm

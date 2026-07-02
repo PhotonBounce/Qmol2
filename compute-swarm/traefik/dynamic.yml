@@ -1,0 +1,44 @@
+# ============================================================================
+# Traefik Dynamic Configuration (traefik/dynamic.yml)
+# ============================================================================
+# Defines middlewares: compression, rate limiting, security headers.
+# These are referenced by Docker labels as <name>@file.
+# ============================================================================
+
+http:
+  middlewares:
+    # -------------------------------------------------------------------------
+    # Compress — gzip/brotli for text and static assets
+    # -------------------------------------------------------------------------
+    compress:
+      compress:
+        excludedContentTypes:
+          - text/event-stream
+
+    # -------------------------------------------------------------------------
+    # Security Headers — HSTS, XSS, content-type, frame options
+    # -------------------------------------------------------------------------
+    security-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        forceSTSHeader: true
+        customFrameOptionsValue: "DENY"
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow"
+
+    # -------------------------------------------------------------------------
+    # API Rate Limit — 100 req/min per IP (burst 50)
+    # -------------------------------------------------------------------------
+    api-ratelimit:
+      ratelimit:
+        average: 100
+        burst: 50
+        period: 1m
+        sourceCriterion:
+          ipStrategy:
+            depth: 1

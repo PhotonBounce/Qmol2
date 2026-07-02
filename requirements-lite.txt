@@ -1,0 +1,29 @@
+# Q-Mol Lite Requirements
+# =======================
+# ABSOLUTE MINIMUM for free-tier hosting (< 512 MB RAM).
+# Removes heavy packages to fit in tiny containers.
+# 
+# What you lose:
+#   - ONNX models (heuristic fallback for predictions)
+#   - Parquet export (CSV only)
+#   - Background jobs (synchronous only)
+#
+# Install: pip install -r requirements-lite.txt
+
+# Cheminformatics (RDKit is the heavy one, but required)
+rdkit>=2024.3.1
+numpy>=1.26
+scipy>=1.12
+
+# HTTP API (minimal)
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.20
+
+# Database (SQLite only)
+sqlalchemy>=2.0
+aiosqlite>=0.20
+
+# Utilities
+requests>=2.31
+python-dotenv>=1.0

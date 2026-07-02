@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run backend tests (placeholder)
+        run: |
+          cd backend
+          echo "Running backend tests..."
+          # pytest tests/ -q
+          echo "TODO: add pytest suite"
+
+      - name: Run backend lint (placeholder)
+        run: |
+          cd backend
+          echo "Running ruff / flake8..."
+          # ruff check .
+          echo "TODO: add ruff"
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd dashboard
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd dashboard
+          npm run build
+
+      - name: Run frontend lint (placeholder)
+        run: |
+          cd dashboard
+          echo "Running ESLint..."
+          # npm run lint
+          echo "TODO: add eslint"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (placeholder)
+        run: |
+          echo "Building backend Docker image..."
+          # docker build -t computeswarm/backend:latest backend/
+          echo "TODO: add full Docker build matrix"
+
+      - name: Build dashboard image (placeholder)
+        run: |
+          echo "Building dashboard Docker image..."
+          # docker build -t computeswarm/dashboard:latest dashboard/
+          echo "TODO: add full Docker build matrix"
+
+      - name: Build worker image (placeholder)
+        run: |
+          echo "Building worker Docker image..."
+          # docker build -t computeswarm/worker:latest worker/
+          echo "TODO: add full Docker build matrix"

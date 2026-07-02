@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Mol Molecular Miner — Your Account, Your Data, Your Earnings</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#0a0e1a; color:#e2e8f0; min-height:100vh; }
+  .container { max-width:1200px; margin:0 auto; padding:24px; }
+  header { text-align:center; padding:40px 0; border-bottom:1px solid #1e293b; margin-bottom:24px; }
+  h1 { font-size:2.5rem; background:linear-gradient(90deg,#f59e0b,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { color:#94a3b8; font-size:1.1rem; margin-top:8px; }
+  .user-bar { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:16px 24px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .user-bar .info { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .user-bar .name { font-weight:600; color:#f8fafc; }
+  .user-bar .stats { display:flex; gap:16px; font-size:13px; color:#94a3b8; }
+  .user-bar .stats span { color:#f59e0b; font-weight:600; }
+  .btn { padding:10px 20px; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-gold { background:#f59e0b; color:#0a0e1a; }
+  .btn-gold:hover { background:#fbbf24; }
+  .btn-secondary { background:#334155; color:#fff; }
+  .card { background:#1e293b; border:1px solid #334155; border-radius:16px; padding:28px; margin-bottom:24px; }
+  .card h2 { font-size:1.3rem; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .big-miner-btn { width:100%; padding:32px; font-size:1.6rem; font-weight:700; border:none; border-radius:16px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:16px; letter-spacing:1px; }
+  .big-miner-btn.mine { background:linear-gradient(90deg,#f59e0b,#fbbf24); color:#0a0e1a; box-shadow:0 8px 30px rgba(245,158,11,.3); }
+  .big-miner-btn.stop { background:linear-gradient(90deg,#dc2626,#ef4444); color:#fff; }
+  .big-miner-btn:disabled { opacity:.5; cursor:not-allowed; }
+  .hash-rate { font-size:2rem; font-weight:700; color:#f59e0b; text-align:center; margin:16px 0; }
+  .miner-display { background:#0a0e1a; border:1px solid #334155; border-radius:12px; padding:20px; margin-top:20px; font-family:monospace; font-size:13px; line-height:1.8; }
+  .miner-display .line { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #1e293b; }
+  .miner-display .value { color:#fbbf24; font-weight:600; }
+  .progress { background:#0a0e1a; border:1px solid #334155; border-radius:12px; height:48px; overflow:hidden; position:relative; margin-top:16px; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#f59e0b,#fbbf24); transition:width .3s; width:0%; }
+  .progress-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; }
+  .log { background:#0a0e1a; border:1px solid #334155; border-radius:12px; padding:16px; font-family:monospace; font-size:11px; line-height:1.6; max-height:200px; overflow-y:auto; margin-top:16px; }
+  .log .ok { color:#4ade80; } .log .err { color:#f87171; } .log .info { color:#38bdf8; } .log .mine { color:#fbbf24; }
+  .hidden { display:none !important; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; z-index:100; }
+  .modal { background:#1e293b; border:1px solid #334155; border-radius:16px; padding:32px; width:90%; max-width:420px; }
+  .modal h3 { font-size:1.3rem; margin-bottom:20px; color:#f8fafc; }
+  .form-row { margin-bottom:16px; }
+  .form-row label { display:block; font-size:13px; color:#94a3b8; margin-bottom:6px; }
+  .form-row input { width:100%; padding:12px; background:#0a0e1a; border:1px solid #334155; border-radius:8px; color:#fff; font-size:14px; }
+  .form-row input:focus { outline:none; border-color:#2563eb; }
+  .tab-btns { display:flex; gap:8px; margin-bottom:20px; }
+  .tab-btn { flex:1; padding:10px; border:none; border-radius:8px; background:#0a0e1a; color:#94a3b8; font-size:13px; cursor:pointer; }
+  .tab-btn.active { background:#2563eb; color:#fff; font-weight:600; }
+  .warning { background:#7f1d1d; border:1px solid #b91c1c; color:#fca5a5; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:13px; }
+  .success-banner { background:#064e3b; border:1px solid #10b981; color:#a7f3d0; padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>⛏️ Q-Mol Molecular Miner</h1>
+  <p class="subtitle">Log in, start mining, build your molecular inventory. Sell datasets on the marketplace.</p>
+</header>
+
+<!-- USER BAR -->
+<div class="user-bar" id="userBar">
+  <div class="info" id="userInfo">
+    <span class="name">Not logged in</span>
+  </div>
+  <div>
+    <button class="btn btn-primary" id="btnLogin" onclick="showLoginModal()">Login / Register</button>
+    <button class="btn btn-secondary hidden" id="btnLogout" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-overlay hidden" id="loginModal">
+  <div class="modal">
+    <h3>🔐 Account Access</h3>
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="setAuthTab('login')">Login</button>
+      <button class="tab-btn" onclick="setAuthTab('register')">Register</button>
+      <button class="tab-btn" onclick="setAuthTab('metamask')">MetaMask</button>
+    </div>
+    <div id="authForm">
+      <div class="form-row"><label>Email</label><input type="email" id="authEmail" placeholder="you@email.com"></div>
+      <div class="form-row"><label>Password</label><input type="password" id="authPassword" placeholder="••••••"></div>
+    </div>
+    <div class="btn-row" style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="submitAuth()">Submit</button>
+      <button class="btn btn-secondary" onclick="closeLoginModal()">Cancel</button>
+    </div>
+    <div id="metamaskBtn" class="hidden" style="margin-top:16px;text-align:center;">
+      <button class="btn btn-gold" style="width:100%;" onclick="connectMetaMask()">🦊 Connect MetaMask</button>
+    </div>
+  </div>
+</div>
+
+<!-- MINER (hidden until login) -->
+<div class="card hidden" id="minerCard">
+  <h2>⚡ Mining Control</h2>
+  <div class="warning" id="minerWarning">Leave this tab open. Mining runs in the background. Your molecules are saved to your account.</div>
+  <button class="big-miner-btn mine" id="btnMine" onclick="toggleMining()">⛏️ START MINING</button>
+  <button class="big-miner-btn stop hidden" id="btnStop" onclick="toggleMining()">⏹ STOP MINING</button>
+
+  <div class="hash-rate" id="hashRateDisplay">0.0 mol/sec</div>
+
+  <div class="miner-display">
+    <div class="line"><span>Current CID:</span><span class="value" id="dispCID">—</span></div>
+    <div class="line"><span>Status:</span><span class="value" id="dispStatus">Idle</span></div>
+    <div class="line"><span>Session Harvested:</span><span class="value" id="dispSession">0</span></div>
+    <div class="line"><span>Total in Account:</span><span class="value" id="dispTotal">0</span></div>
+    <div class="line"><span>Unique:</span><span class="value" id="dispUnique">0</span></div>
+    <div class="line"><span>Lipinski Pass:</span><span class="value" id="dispLipinski">0</span></div>
+    <div class="line"><span>High QED:</span><span class="value" id="dispQED">0</span></div>
+    <div class="line"><span>Earnings:</span><span class="value" id="dispEarnings">$0</span></div>
+  </div>
+
+  <div class="progress">
+    <div class="progress-fill" id="progFill"></div>
+    <div class="progress-text" id="progText">Login to start mining</div>
+  </div>
+
+  <div class="log" id="logBox"><div class="info">Login to start mining molecules...</div></div>
+</div>
+
+<!-- DATASETS -->
+<div class="card hidden" id="datasetsCard">
+  <h2>📦 Your Datasets</h2>
+  <div class="btn-row" style="display:flex;gap:12px;flex-wrap:wrap;">
+    <button class="btn btn-gold" onclick="createDataset('highQED')">Create High-QED Dataset</button>
+    <button class="btn btn-secondary" onclick="createDataset('all')">Create Full Dataset</button>
+    <button class="btn btn-primary" onclick="window.open('marketplace.html','_blank')">🏪 Go to Marketplace</button>
+  </div>
+  <div id="datasetPreview"></div>
+</div>
+
+</div>
+
+<script>
+const API_URL = 'http://photon-bounce.com/qmol/api';
+const PUBCHEM = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid';
+let CURRENT_USER = null;
+let MINING = false;
+let CURRENT_CID = 1;
+let SESSION_COUNT = 0;
+let START_TIME = 0;
+let AUTH_TAB = 'login';
+
+// ==================== AUTH ====================
+async function checkAuth() {
+  try {
+    const r = await fetch(API_URL + '/me', { credentials: 'include' });
+    if (r.ok) {
+      const data = await r.json();
+      CURRENT_USER = data.user;
+      showUser();
+      loadStats();
+    } else {
+      showLogin();
+    }
+  } catch (e) { showLogin(); }
+}
+
+function showUser() {
+  document.getElementById('userInfo').innerHTML = `
+    <span class="name">${CURRENT_USER.display_name || 'User'}</span>
+    <span class="stats">Molecules: <span>${CURRENT_USER.total_molecules}</span> | Earnings: <span>$${CURRENT_USER.total_earnings}</span></span>
+  `;
+  document.getElementById('btnLogin').classList.add('hidden');
+  document.getElementById('btnLogout').classList.remove('hidden');
+  document.getElementById('minerCard').classList.remove('hidden');
+  document.getElementById('datasetsCard').classList.remove('hidden');
+  document.getElementById('progText').textContent = 'Ready — click START';
+}
+
+function showLogin() {
+  document.getElementById('btnLogin').classList.remove('hidden');
+  document.getElementById('btnLogout').classList.add('hidden');
+  document.getElementById('minerCard').classList.add('hidden');
+  document.getElementById('datasetsCard').classList.add('hidden');
+}
+
+function showLoginModal() { document.getElementById('loginModal').classList.remove('hidden'); }
+function closeLoginModal() { document.getElementById('loginModal').classList.add('hidden'); }
+
+function setAuthTab(tab) {
+  AUTH_TAB = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('authForm').classList.toggle('hidden', tab === 'metamask');
+  document.getElementById('metamaskBtn').classList.toggle('hidden', tab !== 'metamask');
+}
+
+async function submitAuth() {
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+  if (AUTH_TAB === 'login') {
+    const r = await fetch(API_URL + '/login', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({email, password}) });
+    const data = await r.json();
+    if (data.success) { closeLoginModal(); checkAuth(); }
+    else { alert(data.error); }
+  } else if (AUTH_TAB === 'register') {
+    const r = await fetch(API_URL + '/register', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({email, password}) });
+    const data = await r.json();
+    if (data.success) { closeLoginModal(); checkAuth(); }
+    else { alert(data.error); }
+  }
+}
+
+async function connectMetaMask() {
+  if (!window.ethereum) { alert('MetaMask not installed. Install from metamask.io'); return; }
+  try {
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const address = accounts[0];
+    const r = await fetch(API_URL + '/login', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({eth_address: address}) });
+    const data = await r.json();
+    if (data.success) { closeLoginModal(); checkAuth(); }
+    else { alert(data.error); }
+  } catch (e) { alert('MetaMask connection failed: ' + e.message); }
+}
+
+async function logout() {
+  await fetch(API_URL + '/logout', { method: 'POST', credentials: 'include' });
+  CURRENT_USER = null;
+  showLogin();
+}
+
+// ==================== MINING ====================
+async function fetchPubChem(cid) {
+  try {
+    const r = await fetch(`${PUBCHEM}/${cid}/property/IsomericSMILES,MolecularWeight,XLogP,TPSA,HydrogenBondDonorCount,HydrogenBondAcceptorCount,RotatableBondCount,IUPACName/JSON`, { timeout: 15000 });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const p = data.PropertyTable.Properties[0];
+    return { cid, smiles: p.IsomericSMILES || p.CanonicalSMILES || '', name: p.IUPACName || '', mw: p.MolecularWeight, logp: p.XLogP, tpsa: p.TPSA, hbd: p.HydrogenBondDonorCount, hba: p.HydrogenBondAcceptorCount, rotatable: p.RotatableBondCount, source: 'pubchem' };
+  } catch (e) { return null; }
+}
+
+function score(mol) {
+  const lipinski = (mol.mw < 500 && mol.logp < 5 && mol.hba < 10 && mol.hbd < 5) ? 1 : 0;
+  const qed = Math.max(0, Math.min(1, 1.0 - Math.abs(mol.mw - 300)/400 - Math.abs(mol.logp - 2)/5 - Math.abs(mol.tpsa - 90)/200));
+  return { ...mol, lipinski_pass: lipinski, qed: Math.round(qed*1000)/1000, veber_pass: (mol.rotatable < 10 && mol.tpsa < 140) ? 1 : 0, pains_hit: 0 };
+}
+
+async function mineOne() {
+  if (!MINING || !CURRENT_USER) return false;
+  const cid = CURRENT_CID;
+  document.getElementById('dispCID').textContent = cid;
+  document.getElementById('dispStatus').textContent = 'Fetching CID ' + cid + '...';
+  const raw = await fetchPubChem(cid);
+  CURRENT_CID++;
+  if (!raw || !raw.smiles) { log('CID ' + cid + ' not found', 'err'); return false; }
+  const mol = score(raw);
+  try {
+    const r = await fetch(API_URL + '/mine', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+      body: JSON.stringify(mol)
+    });
+    if (r.ok) {
+      SESSION_COUNT++;
+      log('CID ' + cid + ' ✓ ' + mol.smiles.slice(0,30) + ' QED=' + mol.qed, 'mine');
+      updateDisplay();
+      loadStats();
+      return true;
+    }
+  } catch (e) { log('Save failed: ' + e.message, 'err'); }
+  return false;
+}
+
+async function miningLoop() {
+  while (MINING) {
+    const start = performance.now();
+    await mineOne();
+    const elapsed = performance.now() - start;
+    const wait = Math.max(0, 800 - elapsed);
+    await new Promise(r => setTimeout(r, wait));
+  }
+}
+
+function toggleMining() {
+  if (MINING) {
+    MINING = false;
+    document.getElementById('btnMine').classList.remove('hidden');
+    document.getElementById('btnStop').classList.add('hidden');
+    document.getElementById('dispStatus').textContent = 'Paused';
+    log('Mining paused', 'info');
+  } else {
+    if (!CURRENT_USER) { showLoginModal(); return; }
+    MINING = true; START_TIME = Date.now(); SESSION_COUNT = 0;
+    document.getElementById('btnMine').classList.add('hidden');
+    document.getElementById('btnStop').classList.remove('hidden');
+    log('Mining started', 'ok');
+    miningLoop();
+  }
+}
+
+async function loadStats() {
+  if (!CURRENT_USER) return;
+  try {
+    const r = await fetch(API_URL + '/stats', { credentials: 'include' });
+    const s = await r.json();
+    if (s.total_molecules !== undefined) {
+      document.getElementById('dispTotal').textContent = s.total_molecules;
+      document.getElementById('dispUnique').textContent = s.unique;
+      document.getElementById('dispLipinski').textContent = s.lipinski_pass;
+      document.getElementById('dispQED').textContent = s.qed_good;
+      document.getElementById('dispEarnings').textContent = '$' + s.total_earnings;
+      const next = s.total_molecules < 100 ? 100 : s.total_molecules < 500 ? 500 : s.total_molecules < 1000 ? 1000 : 5000;
+      const pct = Math.min((s.total_molecules / next) * 100, 100);
+      document.getElementById('progFill').style.width = pct + '%';
+      document.getElementById('progText').textContent = s.total_molecules + ' / ' + next + ' to next dataset';
+    }
+  } catch (e) {}
+}
+
+function updateDisplay() {
+  const elapsed = (Date.now() - START_TIME) / 1000;
+  const rate = elapsed > 0 ? (SESSION_COUNT / elapsed).toFixed(1) : '0.0';
+  document.getElementById('hashRateDisplay').textContent = rate + ' mol/sec';
+  document.getElementById('dispSession').textContent = SESSION_COUNT;
+}
+
+function log(msg, type='info') {
+  const box = document.getElementById('logBox');
+  const el = document.createElement('div'); el.className = type; el.textContent = new Date().toLocaleTimeString() + ' ' + msg;
+  box.appendChild(el); box.scrollTop = box.scrollHeight;
+  while (box.children.length > 50) box.removeChild(box.firstChild);
+}
+
+// ==================== DATASETS ====================
+async function createDataset(type) {
+  if (!CURRENT_USER) { showLoginModal(); return; }
+  const filter = type === 'highQED' ? "qed >= 0.7 AND lipinski_pass = 1" : "";
+  const name = type === 'highQED' ? 'High-QED Drug Candidates' : 'Full Harvest Dataset';
+  try {
+    const r = await fetch(API_URL + '/datasets', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+      body: JSON.stringify({ name: name, description: 'Auto-created from harvest', filter_sql: filter, price_usd: 99 })
+    });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('datasetPreview').innerHTML = `
+        <div class="success-banner">Dataset created: ${data.molecule_count} molecules, $${data.price_usd}
+        <br><a href="marketplace.html" style="color:#fbbf24;">List it on the marketplace →</a></div>`;
+      log('Dataset #' + data.dataset_id + ' created', 'ok');
+    }
+  } catch (e) { alert('Failed: ' + e.message); }
+}
+
+// ==================== INIT ====================
+checkAuth();
+</script>
+</body>
+</html>

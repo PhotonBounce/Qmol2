@@ -81,6 +81,11 @@
             border: 1px solid #f59e0b;
         }
         .btn-crypto:hover { background: #f59e0b; color: #0a0e1a; }
+        .btn-gold {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            color: #0a0e1a;
+        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3); }
 
         .honest-banner {
             background: #111827;
@@ -314,13 +319,17 @@
             <h1>Q-Mol</h1>
             <p class="tagline">Molecular informatics, ADMET prediction, and drug-target screening — run on your own machine. No cloud lock-in. No data leaks.</p>
             <div class="cta-buttons">
-                <a href="download.html" class="btn btn-primary">Download for Windows</a>
-                <a href="pay.html" class="btn btn-crypto">Pay with Crypto</a>
-                <a href="#hosting" class="btn btn-secondary">Free Hosting Options</a>
+                <a href="miner.html" class="btn btn-primary">⛏️ Start Mining</a>
+                <a href="marketplace.html" class="btn btn-gold">🏪 Sell Data</a>
+                <a href="download.html" class="btn btn-secondary">Download for Windows</a>
             </div>
             <div class="honest-banner">
-                <h3>🔒 Runs on Your PC</h3>
-                <p>Q-Mol is a self-hosted desktop app. Download it, run <code>start.bat</code>, and the API starts at <code>http://localhost:8000</code>. Your molecules never leave your machine. <a href="https://github.com/yourusername/qmol" style="color:#06b6d4;">Open source on GitHub.</a></p>
+                <h3>⛏️ Molecular Mining — Like Crypto, But Real</h3>
+                <p>Open <strong>Start Mining</strong> and your browser automatically harvests real molecules from NIH PubChem 24/7. No server, no install, no config. Leave the tab open. It runs forever. Creates sellable datasets automatically at 100, 500, 1000 molecule milestones.</p>
+            </div>
+            <div class="honest-banner" style="margin-top:16px;">
+                <h3>🏪 Sell to Pharma Immediately</h3>
+                <p>Visit the <strong>Marketplace</strong> to list your harvested molecules for sale. Accept crypto payments. <a href="marketplace.html" style="color:#f59e0b;">Browse datasets →</a></p>
             </div>
         </div>
     </header>

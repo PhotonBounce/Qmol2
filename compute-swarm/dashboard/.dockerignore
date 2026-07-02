@@ -1,0 +1,14 @@
+Dockerfile
+.nginx.conf
+node_modules
+dist
+build
+.vite
+.git
+.gitignore
+README.md
+CHANGELOG.md
+VERSION
+LICENSE
+.github
+*.log

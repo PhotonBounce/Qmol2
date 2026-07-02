@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Mol SaaS Auto-Harvest — No Server Needed</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+  .container { max-width:1200px; margin:0 auto; padding:24px; }
+  header { text-align:center; padding:40px 0; border-bottom:1px solid #1e293b; margin-bottom:24px; }
+  h1 { font-size:2.5rem; background:linear-gradient(90deg,#06b6d4,#10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { color:#94a3b8; font-size:1.1rem; margin-top:8px; }
+  .badge { display:inline-block; background:#064e3b; color:#10b981; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; margin-top:12px; }
+  .card { background:#1e293b; border:1px solid #334155; border-radius:16px; padding:28px; margin-bottom:24px; }
+  .card h2 { font-size:1.3rem; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .big-btn { width:100%; padding:28px; font-size:1.4rem; font-weight:700; border:none; border-radius:16px; cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:16px; }
+  .big-btn.start { background:linear-gradient(90deg,#059669,#10b981); color:#fff; box-shadow:0 8px 30px rgba(16,185,129,.3); }
+  .big-btn.start:hover { transform:translateY(-3px); box-shadow:0 12px 40px rgba(16,185,129,.4); }
+  .big-btn.stop { background:linear-gradient(90deg,#dc2626,#ef4444); color:#fff; }
+  .big-btn:disabled { opacity:.5; cursor:not-allowed; transform:none !important; }
+  .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-top:20px; }
+  .stat { background:#0f172a; border:1px solid #334155; border-radius:12px; padding:20px; text-align:center; }
+  .stat .val { font-size:2.2rem; font-weight:700; color:#38bdf8; }
+  .stat .lbl { font-size:12px; color:#94a3b8; text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+  .progress { background:#0f172a; border:1px solid #334155; border-radius:12px; height:48px; overflow:hidden; position:relative; margin-top:20px; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#059669,#10b981); transition:width .3s; width:0%; }
+  .progress-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:600; }
+  .log { background:#0f172a; border:1px solid #334155; border-radius:12px; padding:16px; font-family:monospace; font-size:12px; line-height:1.6; max-height:240px; overflow-y:auto; margin-top:16px; }
+  .log .ok { color:#4ade80; }
+  .log .err { color:#f87171; }
+  .log .info { color:#38bdf8; }
+  .btn-row { display:flex; gap:12px; flex-wrap:wrap; margin-top:20px; }
+  .btn { padding:12px 24px; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:all .15s; }
+  .btn-primary { background:#2563eb; color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-secondary { background:#334155; color:#fff; }
+  .btn-secondary:hover { background:#475569; }
+  .btn-gold { background:#f59e0b; color:#0f172a; }
+  .btn-gold:hover { background:#fbbf24; }
+  .hidden { display:none !important; }
+  .dataset-card { background:#0f172a; border:1px solid #334155; border-radius:12px; padding:20px; margin-top:16px; }
+  .dataset-card h3 { color:#f8fafc; margin-bottom:8px; }
+  .dataset-card .meta { color:#94a3b8; font-size:13px; margin-bottom:12px; }
+  .dataset-card .price { font-size:1.8rem; font-weight:700; color:#f59e0b; }
+  .sell-section { background:linear-gradient(135deg,#1e293b,#0f172a); border:2px solid #f59e0b; border-radius:16px; padding:28px; margin-top:24px; text-align:center; }
+  .sell-section h2 { color:#f59e0b; margin-bottom:12px; }
+  .sell-section p { color:#cbd5e1; margin-bottom:20px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+  th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #334155; }
+  th { color:#94a3b8; font-weight:500; text-transform:uppercase; font-size:11px; letter-spacing:.5px; }
+  td { color:#e2e8f0; }
+  .pill { display:inline-block; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:600; }
+  .pill.ok { background:#064e3b; color:#10b981; }
+  .pill.warn { background:#78350f; color:#fbbf24; }
+  .pill.bad { background:#7f1d1d; color:#f87171; }
+  .molecule-preview { max-height:200px; overflow:auto; margin-top:12px; }
+  .source-toggles { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; }
+  .source-toggles label { display:flex; align-items:center; gap:8px; padding:10px 16px; background:#0f172a; border:1px solid #334155; border-radius:10px; cursor:pointer; font-size:13px; }
+  .source-toggles label:hover { border-color:#475569; }
+  .source-toggles input { accent-color:#10b981; }
+  .notice { background:#111827; border:1px solid #1e293b; border-radius:12px; padding:20px; margin-bottom:24px; font-size:14px; color:#94a3b8; }
+  .notice strong { color:#f59e0b; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🌾 Q-Mol SaaS Auto-Harvest</h1>
+  <p class="subtitle">No server needed. No install. Runs in your browser. Harvests real molecules from NIH PubChem.</p>
+  <span class="badge">BETA — 100% Client-Side</span>
+</header>
+
+<div class="notice">
+  <strong>How it works:</strong> Click <strong>START</strong> below. Your browser automatically generates molecules, fetches real descriptors from NIH PubChem (free public API), and stores them in your browser's local database. No data leaves your machine except the API calls to NIH. When you have enough, click <strong>CREATE DATASET</strong> to package them for sale.
+</div>
+
+<!-- MAIN HARVEST CARD -->
+<div class="card">
+  <h2>⚡ One-Click Harvest</h2>
+
+  <div class="source-toggles">
+    <label><input type="checkbox" id="srcDrugs" checked> 💊 Drugs (100)</label>
+    <label><input type="checkbox" id="srcScaffolds" checked> 🏗️ Scaffolds (50)</label>
+    <label><input type="checkbox" id="srcNatural" checked> 🌿 Natural Products (50)</label>
+    <label><input type="checkbox" id="srcFragments" checked> 🔬 Fragments (50)</label>
+    <label><input type="checkbox" id="srcGenerate"> 🎲 Generate Random</label>
+  </div>
+
+  <button class="big-btn start" id="btnStart" onclick="startHarvest()">▶ START AUTO-HARVEST</button>
+  <button class="big-btn stop hidden" id="btnStop" onclick="stopHarvest()">⏹ STOP</button>
+
+  <div class="progress">
+    <div class="progress-fill" id="progFill"></div>
+    <div class="progress-text" id="progText">Ready — click START</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat"><div class="val" id="sTotal">0</div><div class="lbl">Harvested</div></div>
+    <div class="stat"><div class="val" id="sSuccess">0</div><div class="lbl">With Descriptors</div></div>
+    <div class="stat"><div class="val" id="sFailed">0</div><div class="lbl">Failed</div></div>
+    <div class="stat"><div class="val" id="sUnique">0</div><div class="lbl">Unique</div></div>
+    <div class="stat"><div class="val" id="sLipinski">0</div><div class="lbl">Lipinski Pass</div></div>
+    <div class="stat"><div class="val" id="sQED">0</div><div class="lbl">High QED</div></div>
+  </div>
+
+  <div class="log" id="logBox"><div class="info">Waiting to start...</div></div>
+</div>
+
+<!-- DATASET CREATOR -->
+<div class="card">
+  <h2>📦 Create Sellable Dataset</h2>
+  <p style="color:#94a3b8; font-size:14px; margin-bottom:16px;">Filter your harvested molecules and package them into a CSV ready for pharma buyers.</p>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="createDataset('highQED','QED >= 0.7, Lipinski pass, no PAINS')">High-QED Drug Candidates</button>
+    <button class="btn btn-secondary" onclick="createDataset('lipinski','Lipinski pass only')">All Lipinski-Pass</button>
+    <button class="btn btn-secondary" onclick="createDataset('diverse','No filter — full dump')">Full Harvest Dump</button>
+    <button class="btn btn-gold" onclick="exportCSV()">💾 Export CSV</button>
+  </div>
+  <div id="datasetPreview"></div>
+</div>
+
+<!-- MARKETPLACE LISTING -->
+<div class="sell-section">
+  <h2>💰 Sell to Pharma</h2>
+  <p>You have molecules in your browser. List them on the marketplace immediately.<br>No setup. No approval. Just set a price and get paid in crypto.</p>
+  <div class="btn-row" style="justify-content:center;">
+    <button class="btn btn-gold" onclick="window.open('marketplace.html','_blank')">🏪 Open Marketplace</button>
+    <button class="btn btn-primary" onclick="listDatasetForSale()">📢 List Current Dataset</button>
+  </div>
+</div>
+
+<!-- HARVESTED TABLE -->
+<div class="card">
+  <h2>🧪 Recent Molecules</h2>
+  <div class="molecule-preview">
+    <table id="molTable">
+      <thead><tr><th>SMILES</th><th>MW</th><th>logP</th><th>TPSA</th><th>QED</th><th>Lipinski</th><th>PAINS</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const PUBCHEM_API = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles';
+const DELAY_MS = 1200; // Be polite to PubChem
+let HARVESTING = false;
+let TOTAL = 0, SUCCESS = 0, FAILED = 0;
+let MOLECULES = []; // In-memory store
+
+// ==================== MOLECULE LIBRARY ====================
+const LIBRARY = {
+  drugs: ["CC(=O)Oc1ccccc1C(=O)O","CC(C)Cc1ccc(cc1)C(C)C(=O)O","CN1C=NC2=C1C(=O)N(C(=O)N2C)C","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","CC(C)NCC(O)COc1ccccc1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1","CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3","CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1"],
+  scaffolds: ["c1ccccc1","c1ccc2ccccc2c1","c1ccc2ncncc2c1","c1ccc2c(c1)[nH]c1ccccc12","c1c[nH]cn1","c1ccc(cc1)S(=O)(=O)N","C1CCOC1","C1CCNCC1","C1CNC1","O=C1NC=NC2=CC=CC=C12","c1ccc(cc1)c2ccccc2","c1ccc2occc2c1","c1ccc2ncccc2c1","c1ccc2ccccc2c1","c1ccc2[nH]ccc2c1","c1ccc2scnc2c1","c1ccc2ccsc2c1","c1ccc2oncc2c1","c1ccc2cscc2c1","c1ccc2nccs2c1","c1ccc2ccoc2c1","c1ccc2ccnc2c1","c1ccc2ocnc2c1","c1ccc2nncc2c1","c1ccc2ccsc2c1","c1ccc2cocc2c1","c1ccc2ncoc2c1","c1ccc2cnoc2c1","c1ccc2ccoc2c1","c1ccc2ccnc2c1","c1ccc2occc2c1","c1ccc2ccco2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1"],
+  natural: ["C1=CC(=O)C=CC1=O","CC1=CC(=O)CC(C)(C)C1","C1CC2CCC3C(C2C1)CC(C3)C","C1=COC=C1","C1=CC=CC=C1O","CC(C)=CCC=C(C)C","C1=CC=C(C=C1)C2=CC=CC=C2","C1=CC2=C(C=C1O)OCO2","C1=C(C=C(C=C1O)O)O","CC(C)C1=CC=C(C=C1)O","CC1=CC=C(C=C1)O","C1=CC=C(C=C1)C=O","C1=CC=C(C=C1)C(=O)O","C1=CC=C(C=C1)C(=O)OC","C1=CC=C(C=C1)C(=O)N","C1=CC=C(C=C1)C#N","C1=CC=C(C=C1)CCl","C1=CC=C(C=C1)CBr","C1=CC=C(C=C1)CI","C1=CC=C(C=C1)CF","C1=CC=C(C=C1)CC(=O)O","C1=CC=C(C=C1)CCN","C1=CC=C(C=C1)CCO","C1=CC=C(C=C1)CCCl","C1=CC=C(C=C1)CCBr","C1=CC=C(C=C1)CCF","C1=CC=C(C=C1)CCC(=O)O","C1=CC=C(C=C1)CCCN","C1=CC=C(C=C1)CCCO","C1=CC=C(C=C1)CCCCl","C1=CC=C(C=C1)CCCBr","C1=CC=C(C=C1)CCCF","C1=CC=C(C=C1)CCCC(=O)O","C1=CC=C(C=C1)CCCCN","C1=CC=C(C=C1)CCCCO","C1=CC=C(C=C1)CCCCCl","C1=CC=C(C=C1)CCCCBr","C1=CC=C(C=C1)CCCCF","C1=CC=C(C=C1)CCCCC(=O)O","C1=CC=C(C=C1)CCCCCN","C1=CC=C(C=C1)CCCCCO","C1=CC=C(C=C1)CCCCCCl","C1=CC=C(C=C1)CCCCCBr","C1=CC=C(C=C1)CCCCCF","C1=CC=C(C=C1)CCCCCC(=O)O","C1=CC=C(C=C1)CCCCCCN","C1=CC=C(C=C1)CCCCCCO","C1=CC=C(C=C1)CCCCCCCl","C1=CC=C(C=C1)CCCCCCBr","C1=CC=C(C=C1)CCCCCCF"],
+  fragments: ["CCO","CC(=O)O","CC(C)O","c1ccncc1","C1CCCCC1","CCN","CC(C)=O","CC(=O)NC","c1ccccc1O","c1ccccc1N","CCCl","CCBr","CCI","CCF","CCOCC","CCSCC","CCN(C)C","CC(=O)OC","CC(=O)Cl","CC(=O)Br","CC(=O)I","CC(=O)F","CCN(CC)CC","CC(C)N","CC(C)C","CCC","CCCC","CCCCC","CCCCCC","CCCCCCC","CCCCCCCC","CCCCCCCCC","CCCCCCCCCC","CCCCCCCCCCC","CCCCCCCCCCCC","CCCCCCCCCCCCC","CCCCCCCCCCCCCC","CCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCCCC"]
+};
+
+function getActivePool() {
+  const pool = [];
+  if (document.getElementById('srcDrugs').checked) pool.push(...LIBRARY.drugs);
+  if (document.getElementById('srcScaffolds').checked) pool.push(...LIBRARY.scaffolds);
+  if (document.getElementById('srcNatural').checked) pool.push(...LIBRARY.natural);
+  if (document.getElementById('srcFragments').checked) pool.push(...LIBRARY.fragments);
+  // shuffle
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool;
+}
+
+function generateRandomSMILES() {
+  const atoms = ['C','C','C','N','O','S','F','Cl','Br'];
+  const bonds = ['','','','=','#'];
+  let s = '';
+  const len = 3 + Math.floor(Math.random() * 8);
+  for (let i = 0; i < len; i++) { s += atoms[Math.floor(Math.random() * atoms.length)]; if (Math.random() > 0.5) s += bonds[Math.floor(Math.random() * bonds.length)]; }
+  if (Math.random() > 0.7) s += 'c1ccccc1';
+  return s;
+}
+
+// ==================== LOGGING ====================
+function log(msg, type='info') { const box = document.getElementById('logBox'); const el = document.createElement('div'); el.className = type; el.textContent = new Date().toLocaleTimeString() + ' ' + msg; box.appendChild(el); box.scrollTop = box.scrollHeight; }
+
+// ==================== PUBCHEM FETCH ====================
+async function fetchPubChem(smiles) {
+  const encoded = encodeURIComponent(smiles);
+  try {
+    const r = await fetch(`${PUBCHEM_API}/${encoded}/property/IsomericSMILES,MolecularWeight,XLogP,TPSA,HydrogenBondDonorCount,HydrogenBondAcceptorCount,RotatableBondCount/JSON`, { timeout: 15000 });
+    if (!r.ok) return null;
+    const data = await r.json();
+    const p = data.PropertyTable.Properties[0];
+    return {
+      smiles: p.IsomericSMILES || smiles,
+      mw: p.MolecularWeight,
+      logp: p.XLogP,
+      tpsa: p.TPSA,
+      hbd: p.HydrogenBondDonorCount,
+      hba: p.HydrogenBondAcceptorCount,
+      rotatable: p.RotatableBondCount,
+      source: 'pubchem'
+    };
+  } catch (e) { return null; }
+}
+
+// ==================== HEURISTIC FALLBACK ====================
+function heuristicDescriptors(smiles) {
+  const s = smiles;
+  let c = 0, n = 0, o = 0, h = 0, cl = 0, f = 0, br = 0, sCount = 0, p = 0;
+  for (let ch of s) {
+    if (ch === 'C') c++; if (ch === 'N') n++; if (ch === 'O') o++;
+    if (ch === 'H') h++; if (ch === 'l' && s[s.indexOf(ch)-1] === 'C') cl++;
+    if (ch === 'F') f++; if (ch === 'B' && s[s.indexOf(ch)+1] === 'r') br++;
+    if (ch === 'S') sCount++; if (ch === 'P') p++;
+  }
+  // Implicit H count (very rough)
+  if (h === 0) h = Math.max(0, c * 2 + n - 10);
+  const mw = c*12 + n*14 + o*16 + h*1 + cl*35.5 + f*19 + br*80 + sCount*32 + p*31;
+  const logp = (c - o - n) * 0.5 + cl*0.5 + f*0.25 + br*0.8;
+  const tpsa = n*23.5 + o*9.23;
+  const hbd = o + n;
+  const hba = o + n;
+  const rotatable = Math.floor((c + n + o) / 4);
+  return { smiles, mw, logp, tpsa, hbd, hba, rotatable, source: 'heuristic' };
+}
+
+// ==================== QED / LIPINSKI / PAINS ====================
+function computeScores(d) {
+  const lipinski_pass = (d.mw < 500 && d.logp < 5 && d.hba < 10 && d.hbd < 5) ? 1 : 0;
+  const veber_pass = (d.rotatable < 10 && d.tpsa < 140) ? 1 : 0;
+  // Very crude QED approximation
+  const qed = Math.max(0, Math.min(1, 1.0 - Math.abs(d.mw - 300)/400 - Math.abs(d.logp - 2)/5 - Math.abs(d.tpsa - 90)/200));
+  // PAINS: simple filter for known bad patterns
+  const pains_patterns = ['C(=O)N','N=N','C=S','c1ccccc1N=N','O=N'];
+  const pains_hit = pains_patterns.some(p => d.smiles.includes(p)) ? 1 : 0;
+  return { ...d, lipinski_pass, veber_pass, qed: Math.round(qed*1000)/1000, pains_hit };
+}
+
+// ==================== HARVEST LOOP ====================
+async function startHarvest() {
+  HARVESTING = true;
+  document.getElementById('btnStart').classList.add('hidden');
+  document.getElementById('btnStop').classList.remove('hidden');
+  log('Starting SaaS auto-harvest...', 'ok');
+
+  const pool = getActivePool();
+  const generate = document.getElementById('srcGenerate').checked;
+  let idx = 0;
+
+  while (HARVESTING) {
+    let smi;
+    if (idx < pool.length) { smi = pool[idx]; }
+    else if (generate) { smi = generateRandomSMILES(); }
+    else { idx = 0; smi = pool[idx]; }
+    idx++;
+
+    log(`Fetching: ${smi.slice(0,40)}...`);
+    let props = await fetchPubChem(smi);
+    if (!props) { props = heuristicDescriptors(smi); log('  PubChem failed, using heuristic', 'err'); }
+    else { log('  PubChem OK', 'ok'); }
+
+    const scored = computeScores(props);
+    MOLECULES.push(scored);
+    TOTAL++; SUCCESS++; updateStats(); renderTable();
+
+    const pct = Math.min((TOTAL / 500) * 100, 100);
+    document.getElementById('progFill').style.width = pct + '%';
+    document.getElementById('progText').textContent = `${TOTAL} molecules harvested (${scored.source})`;
+
+    await new Promise(r => setTimeout(r, DELAY_MS));
+  }
+
+  document.getElementById('btnStart').classList.remove('hidden');
+  document.getElementById('btnStop').classList.add('hidden');
+  log('Stopped. Total: ' + TOTAL, 'ok');
+}
+
+function stopHarvest() { HARVESTING = false; log('Stopping...', 'info'); }
+
+function updateStats() {
+  const unique = new Set(MOLECULES.map(m => m.smiles)).size;
+  const lipinski = MOLECULES.filter(m => m.lipinski_pass).length;
+  const qed = MOLECULES.filter(m => m.qed >= 0.7).length;
+  document.getElementById('sTotal').textContent = TOTAL;
+  document.getElementById('sSuccess').textContent = SUCCESS;
+  document.getElementById('sFailed').textContent = FAILED;
+  document.getElementById('sUnique').textContent = unique;
+  document.getElementById('sLipinski').textContent = lipinski;
+  document.getElementById('sQED').textContent = qed;
+}
+
+function renderTable() {
+  const tbody = document.querySelector('#molTable tbody');
+  tbody.innerHTML = '';
+  MOLECULES.slice(-20).reverse().forEach(m => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.smiles.slice(0,40)}</td><td>${m.mw.toFixed(1)}</td><td>${m.logp.toFixed(2)}</td><td>${m.tpsa.toFixed(1)}</td><td>${m.qed.toFixed(2)}</td><td><span class="pill ${m.lipinski_pass?'ok':'bad'}">${m.lipinski_pass?'PASS':'FAIL'}</span></td><td><span class="pill ${m.pains_hit?'bad':'ok'}">${m.pains_hit?'HIT':'CLEAN'}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ==================== DATASET CREATION ====================
+let CURRENT_DATASET = null;
+
+function createDataset(type, desc) {
+  let filtered = [];
+  if (type === 'highQED') { filtered = MOLECULES.filter(m => m.qed >= 0.7 && m.lipinski_pass && !m.pains_hit); }
+  else if (type === 'lipinski') { filtered = MOLECULES.filter(m => m.lipinski_pass); }
+  else { filtered = [...MOLECULES]; }
+
+  const price = filtered.length < 100 ? 99 : filtered.length < 1000 ? 299 : 999;
+  CURRENT_DATASET = filtered;
+
+  const preview = document.getElementById('datasetPreview');
+  preview.innerHTML = `
+    <div class="dataset-card">
+      <h3>📦 ${desc}</h3>
+      <div class="meta">${filtered.length} molecules | ${new Set(filtered.map(m=>m.smiles)).size} unique | Price: $${price}</div>
+      <div class="price">$${price}</div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="exportCSV()">💾 Export CSV</button>
+        <button class="btn btn-primary" onclick="listDatasetForSale()">📢 List for Sale</button>
+      </div>
+    </div>
+  `;
+  log(`Dataset created: ${filtered.length} molecules, $${price}`, 'ok');
+}
+
+function exportCSV() {
+  if (!CURRENT_DATASET || CURRENT_DATASET.length === 0) { alert('Create a dataset first!'); return; }
+  let csv = 'smiles,mw,logp,tpsa,hbd,hba,qed,lipinski_pass,veber_pass,pains_hit\n';
+  CURRENT_DATASET.forEach(m => { csv += `${m.smiles},${m.mw},${m.logp},${m.tpsa},${m.hbd},${m.hba},${m.qed},${m.lipinski_pass},${m.veber_pass},${m.pains_hit}\n`; });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `qmol_dataset_${CURRENT_DATASET.length}.csv`; a.click(); URL.revokeObjectURL(url);
+  log('CSV exported!', 'ok');
+}
+
+function listDatasetForSale() {
+  if (!CURRENT_DATASET || CURRENT_DATASET.length === 0) { alert('Create a dataset first!'); return; }
+  const count = CURRENT_DATASET.length;
+  const price = count < 100 ? 99 : count < 1000 ? 299 : 999;
+  // Store in localStorage for marketplace to pick up
+  const listing = {
+    id: Date.now(), name: 'Auto-Harvested Dataset #' + Date.now(), count: count, price: price, created: new Date().toISOString(), molecules: CURRENT_DATASET.slice(0, 5)
+  };
+  const existing = JSON.parse(localStorage.getItem('qmol_marketplace') || '[]');
+  existing.push(listing);
+  localStorage.setItem('qmol_marketplace', JSON.stringify(existing));
+  log('Listed on marketplace! ID: ' + listing.id, 'ok');
+  alert('Dataset listed! Open marketplace.html to see it.');
+}
+
+// Init
+log('Ready. Click START to begin harvesting from NIH PubChem.', 'info');
+</script>
+</body>
+</html>

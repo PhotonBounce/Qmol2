@@ -1,85 +1,211 @@
-# Q-Mol: Molecular Informatics API
+# Q-Mol v2.0.0
 
-[![API Version](https://img.shields.io/badge/api-v2.0.0-blue)](https://api.qmol.app/v1/health)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
+**Molecular Informatics & Drug Discovery Platform**
 
-Q-Mol is a production-grade molecular informatics platform for drug discovery research. 
-Compute molecular descriptors, predict ADMET properties, design novel molecules, and analyze 
-drug-target interactions — all via a modern REST API.
+Compute molecular descriptors, predict ADMET properties with ML, screen drug-target interactions, and design novel molecules — all from your own machine. No cloud lock-in. No data leaks.
 
-## Quick Start
+[![Python](https://img.shields.io/badge/python-3.12-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688)](https://fastapi.tiangolo.com)
+[![RDKit](https://img.shields.io/badge/RDKit-2024.3-2C8C8C)](https://rdkit.org)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-```bash
-# Get a free API key
-curl -X POST https://api.qmol.app/v1/signup \
-  -H "Content-Type: application/json" \
-  -d '{"email": "you@example.com"}'
+---
 
-# Compute molecular properties
-curl -X POST https://api.qmol.app/v1/compute \
-  -H "x-api-key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"smiles": ["CCO"]}'
+## 🚀 What Q-Mol Can Do
 
-# Predict ADMET properties
-curl -X POST https://api.qmol.app/v1/predict/ml \
-  -H "x-api-key: YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"smiles": ["c1ccccc1"]}'
+| Feature | Description |
+|---------|-------------|
+| **50+ Descriptors** | MW, logP, TPSA, QED, Lipinski rules, ring counts, aromaticity — powered by RDKit |
+| **ML ADMET** | Solubility (logS, R²=0.892), hERG inhibition (R²=0.800), BBB, CYP450 — validated models |
+| **Drug-Target Screening** | EGFR, AChE, BACE1 binding affinity predictions with confidence intervals |
+| **De Novo Design** | Generate novel molecules from seed scaffolds, optimize with genetic algorithms |
+| **Similarity Search** | Tanimoto similarity with ECFP4 fingerprints, PubChem integration |
+| **3D Dashboard** | React + NGL viewer for interactive molecule visualization |
+
+---
+
+## 📦 Quick Start (Windows)
+
+### Option 1: Setup Wizard (Recommended)
+
+```powershell
+cd D:\Qmol-3
+setup.bat
 ```
 
-## Features
+This installs Python dependencies, creates the database, and sets up the environment automatically.
 
-- **50+ Molecular Descriptors**: MW, logP, TPSA, QED, Lipinski rules, and more
-- **ML ADMET Predictions**: logS, BBB, hERG, CYP450, PPB, Ames (validated models)
-- **Drug-Target Interactions**: Screen against EGFR, AChE, BACE1
-- **De Novo Design**: Generate novel molecules and optimize leads
-- **Natural Language Queries**: "Find molecules like aspirin with good BBB"
-- **3D Conformers**: Generate and export PDB, MOL2, CIF
-- **Batch Processing**: Process up to 50,000 molecules via async jobs
-- **Real-time Progress**: SSE streaming for job monitoring
-- **Team Collaboration**: Share molecule collections
-- **Export Formats**: CSV, SDF, Parquet, PDB, FDA report
+### Option 2: Manual
 
-## Pricing
+```powershell
+# 1. Create virtual environment
+python -m venv .venv
 
-| Tier | Price | Quota | Features |
-|------|-------|-------|----------|
-| Free | $0 | 500/mo | Basic descriptors |
-| Trial | $0 | 10,000 | 7 days, all features |
-| Research | $20/mo ($180/yr) | 10,000/mo | All descriptors + ML predictions |
-| Commercial | $50/mo ($450/yr) | 50,000/mo | Priority queue + team sharing |
-| Enterprise | Custom | Unlimited | SSO, custom models, SLA, on-premise |
+# 2. Activate
+.venv\Scripts\activate
 
-[Start free trial](https://qmol.app) | [View API docs](https://qmol.app/docs) | [Enterprise inquiry](https://qmol.app/enterprise)
+# 3. Install dependencies
+pip install -r requirements.txt
 
-## Self-Hosting
-
-```bash
-git clone https://github.com/PhotonBounce/Qmol2.git
-cd Qmol2
-
-# Option 1: Docker Compose (recommended for development)
-docker-compose up --build
-
-# Option 2: Kubernetes (production)
-helm install qmol ./helm/qmol
+# 4. Start the server
+python -m uvicorn api:app --reload
 ```
 
-## Documentation
+### Access the API
 
-- [API Reference](docs/API.md)
-- [Migration Guide](docs/MIGRATION.md)
-- [Security Policy](docs/SECURITY.md)
-- [Contributing](docs/CONTRIBUTING.md)
-- [Changelog](CHANGELOG.md)
+- **Docs:** http://localhost:8000/v1/docs
+- **Health:** http://localhost:8000/health
+- **Compute:** POST to http://localhost:8000/v1/compute with `{"smiles": ["CCO"]}`
 
-## Support
+---
 
-- Email: support@qmol.app
-- GitHub Issues: [PhotonBounce/Qmol2](https://github.com/PhotonBounce/Qmol2/issues)
-- Enterprise: [Contact Sales](https://qmol.app/enterprise)
+## 🌐 Make It Public (Free)
 
-## License
+Run this to get a free HTTPS URL for your local PC:
 
-Apache 2.0. See [LICENSE](LICENSE).
+```powershell
+deploy\cloudflare-tunnel-setup.bat
+```
+
+No port forwarding. No cloud server. Your PC becomes the server with a Cloudflare-secured URL.
+
+For 24/7 hosting, see [docs/FREE_HOSTING.md](docs/FREE_HOSTING.md) — 6 free options ranked by performance.
+
+---
+
+## 💰 Payments (Crypto)
+
+**Wallet:** `0x75B30d0dE751D9628510f3cb273F09f7137f9E3F`
+
+| Plan | Price | What's Included |
+|------|-------|-----------------|
+| **Free** | $0 | All descriptors, ML predictions, local storage, community support |
+| **Research** | $20 (one-time) | Premium API key (10K requests), DTI screening, de novo generation, email support |
+| **Enterprise** | $100 (one-time) | Unlimited requests, custom models, team accounts, priority support |
+| **Android** | $15 (one-time) | Google Play unlock, mobile dashboard, offline compute |
+
+One-time payment. No subscription. No recurring fees.
+
+---
+
+## 📱 Mobile App
+
+### Android APK
+
+```powershell
+build-apk.bat
+```
+
+This builds and signs the Android APK. Requires Flutter SDK (auto-downloaded if missing).
+
+### Google Play Store
+
+Coming soon. Contact us for beta access.
+
+---
+
+## 🏗️ Architecture
+
+```
+Q-Mol v2.0.0
+├── api.py                 # FastAPI entry point
+├── src/
+│   ├── db.py              # Async SQLite/PostgreSQL
+│   ├── models.py          # SQLAlchemy ORM
+│   ├── compute.py         # RDKit descriptor engine
+│   ├── predictor.py       # ML prediction (ONNX + scikit-learn)
+│   ├── pubchem.py         # PubChem integration
+│   ├── storage.py         # SQLite persistence
+│   ├── keys.py            # API key management (bcrypt hashed)
+│   ├── middleware.py      # Security middleware
+│   └── routers/v1/        # 31 REST API endpoints
+├── tests/                 # 35+ integration tests
+├── dashboard/             # React frontend (builds to static)
+├── mobile/                # Flutter Android app
+├── deploy/                # Hosting scripts & Docker files
+└── docs/                  # Documentation
+```
+
+---
+
+## 🔧 Requirements
+
+### Minimum (Free Tier / SQLite)
+
+- Python 3.12
+- 2 GB RAM (4 GB recommended with RDKit)
+- Windows 10/11, Linux, or macOS
+
+### Full Stack (Production)
+
+- PostgreSQL 14+
+- Redis 7+ (for caching, rate limiting, job queue)
+- Celery + Flower (for background tasks)
+
+See `requirements.txt` (core), `requirements-postgres.txt` (production add-ons), `requirements-lite.txt` (absolute minimum).
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test
+pytest tests/integration/test_api.py -v
+```
+
+---
+
+## 🛡️ Security
+
+- API keys are bcrypt-hashed with optional pepper
+- Rate limiting on all endpoints
+- SSRF protection for external URLs
+- Path traversal protection
+- CORS configured per environment
+- HSTS headers in production
+
+See `docs/SECURITY.md` for full details.
+
+---
+
+## 📚 Documentation
+
+| File | Description |
+|------|-------------|
+| `docs/FREE_HOSTING.md` | 6 free hosting options ranked |
+| `docs/GITHUB_SETUP.md` | Step-by-step GitHub repo setup |
+| `docs/SECURITY.md` | Security hardening guide |
+| `docs/MIGRATION.md` | Upgrading from v1.x |
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/amazing`)
+3. Commit (`git commit -am 'Add amazing feature'`)
+4. Push (`git push origin feature/amazing`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [RDKit](https://rdkit.org) — Cheminformatics toolkit
+- [FastAPI](https://fastapi.tiangolo.com) — Web framework
+- [ONNX Runtime](https://onnxruntime.ai) — ML inference
+- [NGL Viewer](https://nglviewer.org) — 3D molecule rendering
+
+---
+
+**Built with Python, RDKit, and FastAPI. Self-hosted. No data lock-in.**
+

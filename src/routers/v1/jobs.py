@@ -50,7 +50,10 @@ def job_submit(
         raise HTTPException(status_code=402,
                             detail=f"Quota would be exceeded ({used}/{info.monthly_quota})")
     keysdb.record(x_api_key, "/jobs", n)
-    job_id = jobs.submit(x_api_key, body.smiles, endpoint="/jobs", charge=n)
+    try:
+        job_id = jobs.submit(x_api_key, body.smiles, endpoint="/jobs", charge=n)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     return {"job_id": job_id, "status": "queued", "n_smiles": n}
 
 
@@ -110,10 +113,13 @@ async def job_stream(
     if jobs.owner(job_id) != x_api_key:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    r = redis_client.get_redis()
+    if r is None:
+        raise HTTPException(status_code=503, detail="Redis not available")
+
     async def event_generator():
-        r = redis_client.get_redis()
-        channel = f"job:{job_id}:progress"
         pubsub = r.pubsub()
+        channel = f"job:{job_id}:progress"
         await pubsub.subscribe(channel)
         try:
             snap = await redis_client.get_progress(job_id)

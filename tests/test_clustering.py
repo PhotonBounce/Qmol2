@@ -91,7 +91,7 @@ def test_cluster_bad_input_400():
     client = TestClient(api.app)
     r = client.post("/cluster", json={"smiles": ["nope", "also-bad"]},
                     headers={"x-api-key": info.key})
-    assert r.status_code == 400
+    assert r.status_code == 422
 
 
 def test_cluster_scope_enforced():

@@ -72,7 +72,7 @@ def test_usage_history_endpoint():
     assert "daily" in body and "by_endpoint" in body
     # at least one endpoint recorded
     paths = {e["endpoint"] for e in body["by_endpoint"]}
-    assert "/usage" in paths
+    assert "/v1/usage" in paths
 
 
 def test_usage_history_auth():

@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated, Any
 
 from src.webhooks import service as webhook_service
 from src import keys as keysdb
+from src.dependencies import _rl, _client_ip
 
 router = APIRouter(tags=["webhooks"])
 
@@ -33,8 +34,10 @@ class WebhookRotateIn(BaseModel):
 @router.post("/webhooks")
 def create_webhook(
     body: WebhookCreateIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     if not keysdb.lookup(x_api_key):
@@ -45,8 +48,10 @@ def create_webhook(
 
 @router.get("/webhooks")
 def list_webhooks(
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 120, 60.0)
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     if not keysdb.lookup(x_api_key):
@@ -58,8 +63,10 @@ def list_webhooks(
 @router.delete("/webhooks/{webhook_id}")
 def delete_webhook(
     webhook_id: str,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     wh = webhook_service.get_webhook(webhook_id)
@@ -72,9 +79,11 @@ def delete_webhook(
 @router.get("/webhooks/{webhook_id}/logs")
 def get_webhook_logs(
     webhook_id: str,
+    request: Request,
     limit: int = 100,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 120, 60.0)
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     wh = webhook_service.get_webhook(webhook_id)
@@ -87,8 +96,10 @@ def get_webhook_logs(
 @router.post("/webhooks/{webhook_id}/test")
 def test_webhook(
     webhook_id: str,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     wh = webhook_service.get_webhook(webhook_id)
@@ -102,8 +113,10 @@ def test_webhook(
 @router.post("/webhooks/{webhook_id}/rotate")
 def rotate_webhook_secret(
     webhook_id: str,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     if not x_api_key:
         raise HTTPException(status_code=401, detail="Missing x-api-key header")
     wh = webhook_service.get_webhook(webhook_id)

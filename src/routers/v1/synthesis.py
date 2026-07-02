@@ -1,7 +1,7 @@
 """FastAPI router for synthesis-aware molecular scoring."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Annotated
 
@@ -14,6 +14,8 @@ from src.dependencies import (
     _require_auth,
     _check_quota,
     record_usage,
+    _rl,
+    _client_ip,
 )
 
 router = APIRouter(tags=["synthesis"])
@@ -49,12 +51,14 @@ class SynthesisScoreIn(BaseModel):
 @router.post("/synthesis/score")
 def synthesis_full_score(
     body: SynthesisScoreIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Full synthesis score: SAscore + purchasability + route complexity.
 
     Charges 3x per molecule.
     """
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 3)
     result = {
@@ -70,9 +74,11 @@ def synthesis_full_score(
 @router.post("/synthesis/sa")
 def synthesis_sa_score(
     body: SynthesisScoreIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Synthetic accessibility score only. Charges 1x."""
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 1)
     result = score_synthesizability(body.smiles)
@@ -83,9 +89,11 @@ def synthesis_sa_score(
 @router.post("/synthesis/purchase")
 def synthesis_purchase_score(
     body: SynthesisScoreIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Purchasability score only. Charges 1x."""
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 1)
     result = score_purchasability(body.smiles)
@@ -96,9 +104,11 @@ def synthesis_purchase_score(
 @router.post("/synthesis/route")
 def synthesis_route_score(
     body: SynthesisScoreIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Retrosynthetic route complexity only. Charges 1x."""
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 1)
     result = score_synthesis_route(body.smiles)

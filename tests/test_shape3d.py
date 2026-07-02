@@ -76,7 +76,7 @@ def test_shape_bad_smiles_400():
     client = TestClient(api.app)
     r = client.post("/shape3d", json={"smiles": ["bad-smiles"]},
                     headers={"x-api-key": info.key})
-    assert r.status_code == 400
+    assert r.status_code == 422
 
 
 def test_shape_scope_enforced():

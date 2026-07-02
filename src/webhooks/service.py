@@ -21,6 +21,8 @@ try:
 except ImportError:
     requests = None
 
+from src.webhooks_out import _is_valid_webhook_url
+
 DEFAULT_DB = Path("data/webhooks_v2.sqlite")
 MAX_ATTEMPTS = 5
 BACKOFF_BASE = 2.0
@@ -105,6 +107,8 @@ def _generate_secret() -> str:
 
 
 def create_webhook(api_key: str, url: str, events: str, secret: str | None = None) -> WebhookInfo:
+    if not _is_valid_webhook_url(url):
+        raise ValueError(f"Invalid or blocked webhook URL: {url}")
     conn = _connect()
     wid = str(uuid.uuid4())
     sec = secret or _generate_secret()
@@ -195,6 +199,9 @@ def deliver(webhook_id: str, event: str, payload: dict[str, Any]) -> bool:
     """Attempt delivery. Returns True on success. Logs every attempt."""
     wh = get_webhook(webhook_id)
     if not wh or not wh.active or requests is None:
+        return False
+    # Re-validate URL at delivery time to prevent DNS rebinding / time-of-check-time-of-use
+    if not _is_valid_webhook_url(wh.url):
         return False
     # Check event filter
     allowed_events = {e.strip() for e in wh.events.split(",")}

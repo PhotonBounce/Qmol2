@@ -1,7 +1,7 @@
 """FastAPI router for natural language chemistry queries."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Annotated
 
@@ -11,6 +11,7 @@ from src.dependencies import (
     _check_quota,
     record_usage,
     _rl,
+    _client_ip,
 )
 
 router = APIRouter(tags=["nlp"])
@@ -38,12 +39,14 @@ class NlpQueryIn(BaseModel):
 @router.post("/nlp/query")
 def nlp_query_endpoint(
     body: NlpQueryIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Parse a natural language query into a structured API call specification.
 
     Charges 1x per call.
     """
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 1)
     parsed = parse_query(body.query)
@@ -54,6 +57,7 @@ def nlp_query_endpoint(
 @router.post("/nlp/execute")
 def nlp_execute_endpoint(
     body: NlpQueryIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Parse a natural language query and execute it.
@@ -65,6 +69,7 @@ def nlp_execute_endpoint(
     - optimize: 10x
     - compute: 1x per molecule
     """
+    _rl(_client_ip(request), 30, 60.0)
     _require_auth(x_api_key)
 
     # Parse first to determine charge
@@ -99,9 +104,11 @@ def nlp_execute_endpoint(
 
 @router.get("/nlp/molecules")
 def list_known_molecules(
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """List all known molecule names that can be referenced in natural language queries."""
+    _rl(_client_ip(request), 120, 60.0)
     _require_auth(x_api_key)
     from src.nlp.parser import MOLECULE_NAMES
     return {

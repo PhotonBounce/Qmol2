@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict
 
 from src import teams, keys as keysdb
-from src.dependencies import require_admin
+from src.dependencies import require_admin, _rl, _client_ip
 
 router = APIRouter(tags=["teams"])
 
@@ -37,8 +37,10 @@ class TeamMemberIn(BaseModel):
 @router.post("/teams")
 def team_create(
     body: TeamCreateIn,
+    request: Request,
     x_admin_token: str | None = Header(default=None),
 ):
+    _rl(_client_ip(request), 30, 60.0)
     require_admin(x_admin_token)
     t = teams.create(body.name, body.tier, body.monthly_quota, body.owner_email)
     return t.to_dict()
@@ -47,8 +49,10 @@ def team_create(
 @router.post("/teams/members")
 def team_add_member(
     body: TeamMemberIn,
+    request: Request,
     x_admin_token: str | None = Header(default=None),
 ):
+    _rl(_client_ip(request), 30, 60.0)
     require_admin(x_admin_token)
     if teams.get(body.team_id) is None:
         raise HTTPException(status_code=404, detail="Team not found")
@@ -61,8 +65,10 @@ def team_add_member(
 @router.delete("/teams/members")
 def team_remove_member(
     body: TeamMemberIn,
+    request: Request,
     x_admin_token: str | None = Header(default=None),
 ):
+    _rl(_client_ip(request), 30, 60.0)
     require_admin(x_admin_token)
     teams.remove_member(body.team_id, body.api_key)
     return {"removed": True}
@@ -71,8 +77,10 @@ def team_remove_member(
 @router.get("/teams/{team_id}")
 def team_get(
     team_id: str,
+    request: Request,
     x_admin_token: str | None = Header(default=None),
 ):
+    _rl(_client_ip(request), 60, 60.0)
     require_admin(x_admin_token)
     t = teams.get(team_id)
     if not t:

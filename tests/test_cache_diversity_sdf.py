@@ -135,7 +135,8 @@ def test_sdf_download_endpoint():
 # ---------- admin cache endpoint ----------
 
 def test_admin_cache_requires_token(monkeypatch):
-    monkeypatch.setattr(api, "ADMIN_TOKEN", "secret")
+    import src.dependencies as deps
+    monkeypatch.setattr(deps, "ADMIN_TOKEN", "secret")
     client = TestClient(api.app)
     r = client.get("/admin/cache")
     assert r.status_code == 401

@@ -81,16 +81,20 @@ def make_trusted_host_middleware(allowed_hosts: list[str] | None = None) -> Trus
 
 
 class MaxBodySizeMiddleware(BaseHTTPMiddleware):
-    """Reject requests with body larger than max_size."""
+    """Reject requests with body larger than max_size without consuming the stream."""
     def __init__(self, app, max_size: int = 10 * 1024 * 1024):  # 10MB
         super().__init__(app)
         self.max_size = max_size
 
     async def dispatch(self, request, call_next):
         if request.method in ("POST", "PUT", "PATCH"):
-            body = await request.body()
-            if len(body) > self.max_size:
-                raise HTTPException(413, "Request body too large")
+            content_length = request.headers.get("content-length")
+            if content_length and int(content_length) > self.max_size:
+                from fastapi.responses import JSONResponse
+                return JSONResponse(
+                    {"detail": "Request body too large"},
+                    status_code=413,
+                )
         return await call_next(request)
 
 

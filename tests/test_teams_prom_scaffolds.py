@@ -59,7 +59,9 @@ def test_effective_quota_falls_back_to_key():
     assert quota > 0
 
 
-def test_team_endpoints_require_admin():
+def test_team_endpoints_require_admin(monkeypatch):
+    import src.dependencies as deps
+    monkeypatch.setattr(deps, "ADMIN_TOKEN", "admintok")
     client = TestClient(api.app)
     r = client.post("/teams", json={"name": "X", "tier": "research",
                                     "monthly_quota": 1000})
@@ -110,8 +112,9 @@ def test_prom_render_contains_expected_metrics():
 
 
 def test_metrics_endpoint():
+    info = keysdb.provision("m@u.com", "research")
     client = TestClient(api.app)
-    r = client.get("/metrics")
+    r = client.get("/v1/metrics", headers={"x-api-key": info.key})
     assert r.status_code == 200
     assert "qmol_api_keys_active" in r.text
     assert r.headers["content-type"].startswith("text/plain")

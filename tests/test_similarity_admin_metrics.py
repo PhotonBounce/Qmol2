@@ -83,7 +83,8 @@ def test_similarity_endpoint_requires_key(populated_db, isolated_keys):
 # ---------- admin endpoints ----------
 
 def test_admin_requires_token(isolated_keys, monkeypatch):
-    monkeypatch.setattr(api, "ADMIN_TOKEN", "secret123")
+    import src.dependencies as deps
+    monkeypatch.setattr(deps, "ADMIN_TOKEN", "secret123")
     client = TestClient(api.app)
     r = client.get("/admin/stats")
     assert r.status_code == 401
@@ -92,7 +93,8 @@ def test_admin_requires_token(isolated_keys, monkeypatch):
 
 
 def test_admin_stats_works(populated_db, isolated_keys, monkeypatch):
-    monkeypatch.setattr(api, "ADMIN_TOKEN", "secret123")
+    import src.dependencies as deps
+    monkeypatch.setattr(deps, "ADMIN_TOKEN", "secret123")
     keysdb.provision("paid@u.com", "commercial")
     client = TestClient(api.app)
     r = client.get("/admin/stats", headers={"x-admin-token": "secret123"})
@@ -104,7 +106,8 @@ def test_admin_stats_works(populated_db, isolated_keys, monkeypatch):
 
 
 def test_admin_top_users(populated_db, isolated_keys, monkeypatch):
-    monkeypatch.setattr(api, "ADMIN_TOKEN", "t")
+    import src.dependencies as deps
+    monkeypatch.setattr(deps, "ADMIN_TOKEN", "t")
     info = keysdb.provision("heavy@u.com", "research")
     keysdb.record(info.key, "/compute/premium", 1234)
     client = TestClient(api.app)

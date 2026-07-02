@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Q-Mol</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0e1a;
+            color: #e2e8f0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+        .back-link { display: inline-block; color: #64748b; text-decoration: none; margin-bottom: 24px; font-size: 0.9rem; }
+        .back-link:hover { color: #06b6d4; }
+        h1 { font-size: 2rem; color: #f1f5f9; margin-bottom: 8px; }
+        .subtitle { color: #94a3b8; margin-bottom: 40px; }
+
+        .platform-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        .platform-icon {
+            font-size: 3rem;
+            width: 64px;
+            text-align: center;
+        }
+        .platform-info { flex: 1; min-width: 250px; }
+        .platform-info h2 { font-size: 1.3rem; color: #f1f5f9; margin-bottom: 8px; }
+        .platform-info p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px; }
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #06b6d4, #10b981);
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .download-btn:hover { filter: brightness(1.1); }
+        .download-btn.secondary {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+        }
+        .download-btn.secondary:hover { background: #334155; }
+
+        .requirements {
+            background: #0a0e1a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        .requirements h4 { color: #f59e0b; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 8px; }
+        .requirements ul { list-style: none; padding: 0; }
+        .requirements li {
+            color: #64748b;
+            font-size: 0.85rem;
+            padding: 4px 0;
+        }
+        .requirements li::before { content: "•"; color: #06b6d4; margin-right: 8px; }
+
+        .coming-soon {
+            display: inline-block;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #64748b;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .code-block {
+            background: #0a0e1a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            margin-top: 12px;
+            overflow-x: auto;
+        }
+        .code-block .comment { color: #6b7280; }
+        .code-block .prompt { color: #06b6d4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Q-Mol</a>
+        <h1>Download Q-Mol</h1>
+        <p class="subtitle">Choose your platform. All versions include the full API and dashboard.</p>
+
+        <div class="platform-card">
+            <div class="platform-icon">💻</div>
+            <div class="platform-info">
+                <h2>Windows</h2>
+                <p>Self-hosted desktop app. Runs the full API locally. No cloud required. Python 3.12 + RDKit included.</p>
+                <a href="qmol-windows.zip" class="download-btn">Download ZIP (8 MB)</a>
+                <a href="https://github.com/yourusername/qmol" class="download-btn secondary" target="_blank">GitHub</a>
+                <div class="requirements">
+                    <h4>Requirements</h4>
+                    <ul>
+                        <li>Windows 10/11 (64-bit)</li>
+                        <li>8 GB RAM recommended</li>
+                        <li>Python 3.12 (auto-installed if missing)</li>
+                        <li>Internet connection (for PubChem queries)</li>
+                    </ul>
+                </div>
+                <div class="code-block">
+<span class="prompt">></span> <span class="comment"># Quick start</span>
+<span class="prompt">></span> unzip qmol-windows.zip
+<span class="prompt">></span> cd qmol
+<span class="prompt">></span> start.bat
+                </div>
+            </div>
+        </div>
+
+        <div class="platform-card" id="android">
+            <div class="platform-icon">📱</div>
+            <div class="platform-info">
+                <h2>Android</h2>
+                <p>Mobile molecular dashboard. View structures, compute descriptors, and sync with your desktop API.</p>
+                <a href="https://play.google.com/store/apps/details?id=com.qmol.app" class="download-btn" target="_blank">Google Play</a>
+                <a href="qmol.apk" class="download-btn secondary">Download APK</a>
+                <div class="requirements">
+                    <h4>Requirements</h4>
+                    <ul>
+                        <li>Android 8.0 (API 26) or higher</li>
+                        <li>Requires desktop API running on same network</li>
+                        <li>200 MB storage</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="platform-card">
+            <div class="platform-icon">🐧</div>
+            <div class="platform-info">
+                <h2>Linux / macOS</h2>
+                <p>Run from source. Best for developers and power users.</p>
+                <a href="https://github.com/yourusername/qmol" class="download-btn" target="_blank">GitHub</a>
+                <div class="code-block">
+<span class="prompt">$</span> <span class="comment"># Clone and run</span>
+<span class="prompt">$</span> git clone https://github.com/yourusername/qmol.git
+<span class="prompt">$</span> cd qmol
+<span class="prompt">$</span> python3 -m venv .venv
+<span class="prompt">$</span> .venv/bin/pip install -r requirements.txt
+<span class="prompt">$</span> .venv/bin/python -m uvicorn api:app --reload
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

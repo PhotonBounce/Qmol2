@@ -1,13 +1,13 @@
 """FastAPI router for Drug-Target Interaction (DTI) prediction."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Annotated
 
 from src.dti import predict_binding_affinity, predict_multi_target_activity, list_targets, get_target_info
 from src.dti.targets import TARGETS, VALIDATED_TARGETS, validate_target
-from src.dependencies import _require_auth, _check_quota, record_usage
+from src.dependencies import _require_auth, _check_quota, record_usage, _rl, _client_ip
 
 router = APIRouter(tags=["dti"])
 
@@ -69,9 +69,11 @@ class ScreenIn(BaseModel):
 
 @router.get("/dti/targets")
 def list_targets_endpoint(
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
     """List all available protein targets."""
+    _rl(_client_ip(request), 120, 60.0)
     _require_auth(x_api_key)
     return {"targets": list_targets()}
 
@@ -79,9 +81,11 @@ def list_targets_endpoint(
 @router.get("/dti/targets/{target_id}")
 def get_target_info_endpoint(
     target_id: str,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Get detailed information about a specific target."""
+    _rl(_client_ip(request), 120, 60.0)
     _require_auth(x_api_key)
     info = get_target_info(target_id)
     if not info:
@@ -95,9 +99,11 @@ def get_target_info_endpoint(
 @router.post("/dti/predict")
 def predict_endpoint(
     body: PredictIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Predict binding affinity (pKi) for a single molecule against one target. Charges 5 credits."""
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     charge = 5
     used, quota = _check_quota(x_api_key, charge)
@@ -117,9 +123,11 @@ def predict_endpoint(
 @router.post("/dti/predict/multi")
 def predict_multi_endpoint(
     body: MultiPredictIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Predict activity across multiple targets for a single molecule. Charges 10 credits."""
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     charge = 10
     used, quota = _check_quota(x_api_key, charge)
@@ -141,9 +149,11 @@ def predict_multi_endpoint(
 @router.post("/dti/screen")
 def screen_endpoint(
     body: ScreenIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
     """Screen a library of molecules against a single target. Charges 3 credits per molecule."""
+    _rl(_client_ip(request), 30, 60.0)
     _require_auth(x_api_key)
     charge = 3 * len(body.smiles)
     used, quota = _check_quota(x_api_key, charge)

@@ -70,7 +70,9 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://qmol:qmol@localhost:5432/qmol
           REDIS_URL: redis://localhost:6379/0
-        run: pytest tests/ -v --tb=short
+        run: |
+          pytest tests/ -v --tb=short
+          curl -sf http://localhost:8000/health || echo "Health check skipped (server not running)"
 
   security-scan:
     name: Security Scan

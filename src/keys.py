@@ -34,15 +34,37 @@ PEPPER = os.getenv("API_KEY_PEPPER", "").encode()
 
 
 def _hash_key(key: str) -> bytes:
-    """Hash an API key with bcrypt + optional pepper."""
+    """Hash an API key with bcrypt + optional pepper.
+    
+    bcrypt has a 72-byte input limit. When pepper is present, we pre-hash
+    with SHA-256 to fit within the limit while preserving pepper entropy.
+    """
     combined = key.encode() + PEPPER
+    if len(combined) > 72:
+        combined = hashlib.sha256(combined).digest()
     return bcrypt.hashpw(combined, bcrypt.gensalt(rounds=12))
 
 
 def _verify_key(key: str, stored_hash: bytes) -> bool:
-    """Verify an API key against a bcrypt hash."""
-    combined = key.encode() + PEPPER
-    return bcrypt.checkpw(combined, stored_hash)
+    """Verify an API key against a bcrypt hash.
+    
+    Backward-compatible: tries with pepper first (new keys), then without
+    pepper (old keys created before pepper was configured).
+    Handles invalid hashes gracefully.
+    """
+    try:
+        # New keys: with pepper (pre-hashed if needed)
+        combined = key.encode() + PEPPER
+        if len(combined) > 72:
+            combined = hashlib.sha256(combined).digest()
+        if bcrypt.checkpw(combined, stored_hash):
+            return True
+        # Fallback: old keys without pepper
+        if PEPPER and bcrypt.checkpw(key.encode(), stored_hash):
+            return True
+    except ValueError:
+        pass
+    return False
 
 TIER_QUOTA = {
     "free": 500,

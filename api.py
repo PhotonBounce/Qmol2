@@ -38,6 +38,13 @@ API_KEYS = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan handler: startup and shutdown events."""
+    # Initialize database tables on startup (SQLite auto-creates, PostgreSQL needs this)
+    try:
+        from src.db import init_db
+        await init_db()
+    except Exception as exc:
+        import logging
+        logging.getLogger("qmol.api").warning("Database init failed: %s", exc)
     yield
     from src.db import close_db
     await close_db()
@@ -132,6 +139,7 @@ async def _scope_middleware(request: Request, call_next):
 _EXCLUDE_REDIRECT = {
     "/", "/docs", "/openapi.json", "/openapi-static.json",
     "/redoc", "/redoc.html", "/favicon.ico",
+    "/health", "/metrics", "/ready",
 }
 _EXCLUDE_PREFIXES = (
     "/v1/", "/landing/", "/static/", "/docs/", "/openapi",
@@ -142,8 +150,12 @@ async def _legacy_redirect_middleware(request: Request, call_next):
     path = request.url.path
     if path in _EXCLUDE_REDIRECT or any(path.startswith(p) for p in _EXCLUDE_PREFIXES):
         return await call_next(request)
-    # Redirect everything else to /v1 equivalent
-    return RedirectResponse(url=f"/v1{path}", status_code=307)
+    # Redirect everything else to /v1 equivalent, preserving query string
+    query = str(request.url.query)
+    target = f"/v1{path}"
+    if query:
+        target = f"{target}?{query}"
+    return RedirectResponse(url=target, status_code=307)
 
 
 # OpenAPI static JSON (legacy path, not in router)
@@ -168,6 +180,27 @@ def root():
     except Exception:
         n = 0
     return {"status": "ok", "public_rows": n, "docs": "/docs"}
+
+
+# Top-level health endpoint for hosting probes (Render, Fly.io, etc.)
+@app.get("/health", include_in_schema=False)
+def health():
+    """Simple health check for hosting platform probes."""
+    return {"status": "ok", "version": "2.0.0"}
+
+
+# Readiness check (can include DB connectivity if needed)
+@app.get("/ready", include_in_schema=False)
+def ready():
+    """Readiness probe."""
+    return {"ready": True}
+
+
+# Metrics stub (for Prometheus-style monitoring)
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    """Basic metrics stub."""
+    return {"requests_total": 0}
 
 
 def make_api_key(email: str, secret: str) -> str:

@@ -76,7 +76,7 @@ def test_stereo_bad_smiles_400():
     client = TestClient(api.app)
     r = client.post("/stereoisomers", json={"smiles": ["bad-smiles"]},
                     headers={"x-api-key": info.key})
-    assert r.status_code == 400
+    assert r.status_code == 422
 
 
 def test_stereo_scope_enforced():

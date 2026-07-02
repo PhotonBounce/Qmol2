@@ -1,7 +1,7 @@
 """De novo molecular generation & lead optimization API endpoints."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional
 
@@ -12,6 +12,8 @@ from src.dependencies import (
     _require_auth,
     _check_quota,
     record_usage,
+    _rl,
+    _client_ip,
 )
 
 router = APIRouter(tags=["generation"])
@@ -128,9 +130,11 @@ class ScoreIn(BaseModel):
 @router.post("/generate")
 def generate_molecules(
     in_: GenerateIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Generate novel SMILES using a character-level Markov model trained on seed molecules."""
+    _rl(_client_ip(request), 30, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, in_.n * 5)
     results = rnn_generator.sample_smiles(in_.seed_smiles, n=in_.n)
@@ -145,9 +149,11 @@ def generate_molecules(
 @router.post("/optimize")
 def optimize_molecule_endpoint(
     in_: OptimizeIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Optimize a single molecule toward a target property (logP, MW, TPSA, or QED)."""
+    _rl(_client_ip(request), 30, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 10)
     result = optimizer.optimize_molecule(
@@ -163,9 +169,11 @@ def optimize_molecule_endpoint(
 @router.post("/optimize/lead")
 def optimize_lead_endpoint(
     in_: LeadOptimizeIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Multi-objective lead optimization (e.g., balance logP, MW, and QED simultaneously)."""
+    _rl(_client_ip(request), 30, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 10)
     result = optimizer.optimize_lead(
@@ -180,9 +188,11 @@ def optimize_lead_endpoint(
 @router.post("/score")
 def score_molecule_endpoint(
     in_: ScoreIn,
+    request: Request,
     x_api_key: str = Header(..., alias="x-api-key"),
 ):
     """Score a molecule against one or more ADMET / drug-likeness objectives."""
+    _rl(_client_ip(request), 60, 60.0)
     _require_auth(x_api_key)
     _check_quota(x_api_key, 2)
 

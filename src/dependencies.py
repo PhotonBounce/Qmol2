@@ -13,7 +13,11 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import Header, HTTPException, Request, Depends
 
-from src import keys as keysdb, ratelimit, teams, scopes, redis_client
+from src import keys as keysdb, ratelimit, teams, scopes
+try:
+    from src import redis_client
+except Exception:
+    redis_client = None
 
 ADMIN_TOKEN = os.getenv("QMOL_ADMIN_TOKEN", "")
 # Legacy env-var keys (still supported for bootstrap / admin):
@@ -111,21 +115,6 @@ async def rate_limit_async(key: str, limit: int, window: float) -> None:
         ratelimit.check(key, limit, window)
 
 
-def client_ip(request) -> str:
-    """Extract client IP from request, with X-Forwarded-For trust."""
-    import os
-    trusted = os.getenv("TRUSTED_PROXIES", "").split(",")
-    xff = request.headers.get("x-forwarded-for", "").split(",")
-    if xff[0].strip() and trusted:
-        for ip in reversed(xff):
-            ip = ip.strip()
-            if ip and not any(ip.startswith(t.strip()) for t in trusted if t.strip()):
-                return ip
-    return request.client.host if request.client else "unknown"
-
-
-# Backward-compatible aliases
-_client_ip = client_ip
 
 
 def require_api_key(

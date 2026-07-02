@@ -134,7 +134,7 @@ def test_retro_endpoint_auth():
 
 def test_plans_catalog():
     assert any(p["id"] == "research" for p in plans.PLANS)
-    assert plans.by_id("commercial")["price_usd"] == 299
+    assert plans.by_id("commercial")["price_usd"] == 50
     assert plans.by_id("nope") is None
 
 

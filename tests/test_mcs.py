@@ -84,7 +84,7 @@ def test_mcs_all_invalid_400():
     client = TestClient(api.app)
     r = client.post("/mcs", json={"smiles": ["nope", "bad"]},
                     headers={"x-api-key": info.key})
-    assert r.status_code == 400
+    assert r.status_code == 422
 
 
 def test_mcs_scope_enforced():

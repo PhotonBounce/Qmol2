@@ -43,6 +43,7 @@ from .collections import router as collections_router
 from .pka import router as pka_router
 from .mmpa import router as mmpa_router
 from .pharmacophore import router as pharmacophore_router
+from .harvest import router as harvest_router
 
 v1_router = APIRouter(prefix="/v1")
 
@@ -85,3 +86,4 @@ v1_router.include_router(collections_router)
 v1_router.include_router(pka_router)
 v1_router.include_router(mmpa_router)
 v1_router.include_router(pharmacophore_router)
+v1_router.include_router(harvest_router)

@@ -37,7 +37,8 @@ def test_compute_free_limit_exceeded():
 
 
 def test_compute_premium_requires_key(monkeypatch):
-    monkeypatch.setattr(api, "API_KEYS", {"secret-test-key"})
+    import src.dependencies as deps
+    monkeypatch.setattr(deps, "API_KEYS", {"secret-test-key"})
     r = client.post("/v1/compute/premium", json={"smiles": ["CCO"]})
     assert r.status_code == 401
     r = client.post(

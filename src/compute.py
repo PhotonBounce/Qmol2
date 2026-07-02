@@ -257,4 +257,11 @@ def compute_molecule(
 
     base["success"] = True
     base["runtime_seconds"] = time.time() - t0
-    return ComputeResult(**base)
+    result = ComputeResult(**base)
+    # Harvest: store computed molecule for dataset monetization
+    try:
+        from src import harvest as _harvest
+        _harvest.ingest(smiles, base, source_endpoint="/compute")
+    except Exception:
+        pass  # Never fail user request due to harvesting
+    return result

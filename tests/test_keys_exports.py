@@ -93,7 +93,8 @@ def test_api_usage_endpoint(tmp_path, monkeypatch):
 
 def test_health():
     client = TestClient(api.app)
-    assert client.get("/v1/health").json() == {"status": "ok"}
+    r = client.get("/v1/health")
+    assert r.json()["status"] == "ok"
 
 
 def test_sdf_and_jsonl_export(tmp_path):

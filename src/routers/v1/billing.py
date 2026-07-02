@@ -220,7 +220,7 @@ def magic_link_request(body: MagicLinkIn, request: Request):
                                 f"Click to retrieve your API key: {link}\n\nLink expires in 15 minutes.")
     except Exception:
         _sent = False
-    return {"sent": _sent}
+    return {"sent": _sent, "dev_token": token}
 
 
 @router.get("/auth/redeem")

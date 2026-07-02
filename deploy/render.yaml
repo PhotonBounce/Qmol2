@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: qmol
+    env: docker
+    dockerfilePath: ./deploy/lite.Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: USE_POSTGRES
+        value: "false"
+      - key: QMOL_ADMIN_TOKEN
+        generateValue: true
+      - key: PORT
+        value: "8000"
+    disk:
+      name: qmol-data
+      mountPath: /app/data
+      sizeGB: 1

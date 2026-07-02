@@ -54,7 +54,7 @@ def test_predict_endpoint_bad_smiles_400(isolated):
     client = TestClient(api.app)
     r = client.post("/predict", json={"smiles": ["not-a-mol"]},
                     headers={"x-api-key": info.key})
-    assert r.status_code == 400
+    assert r.status_code == 422
 
 
 # ---------- status / uptime ----------

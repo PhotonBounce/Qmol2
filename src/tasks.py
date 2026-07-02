@@ -16,7 +16,38 @@ from pathlib import Path
 from typing import Any
 
 import config
-from src.celery_app import app
+try:
+    from src.celery_app import app
+except Exception:
+    class _DummyApp:
+        """Dummy Celery app for environments without Celery."""
+
+        @staticmethod
+        def task(*args, **kwargs):
+            bind = kwargs.get('bind', False)
+            def decorator(func):
+                if bind:
+                    class _MockSelf:
+                        class request:
+                            retries = 0
+                            is_eager = True
+                    def wrapper(*args, **kwargs):
+                        return func(_MockSelf(), *args, **kwargs)
+                    wrapper.delay = wrapper
+                    wrapper.apply_async = wrapper
+                    wrapper.apply = lambda args=None, kwargs=None, **kw: func(_MockSelf(), *(args or ()), **(kwargs or {}))
+                    return wrapper
+                else:
+                    func.delay = func
+                    func.apply_async = func
+                    func.apply = lambda args=None, kwargs=None, **kw: func(*(args or ()), **(kwargs or {}))
+                    return func
+            if args and callable(args[0]):
+                return decorator(args[0])
+            return decorator
+
+    app = _DummyApp()  # type: ignore
+
 from src import redis_client
 from src import compute, predict, screen, similarity, clustering, conformers, fingerprints
 from src import keys as keysdb

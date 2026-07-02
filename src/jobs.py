@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import config
-from src.celery_app import app
+from src.celery_app import app, _celery_available
 from src import redis_client
 
 DEFAULT_DB = Path("data/jobs.sqlite")
@@ -118,13 +118,16 @@ def submit(api_key: str, smiles: list[str], endpoint: str = "/jobs",
 
     Input is written to data/jobs/<id>.input.json for audit / idempotency.
     """
+    if not _celery_available:
+        raise RuntimeError("Celery is not configured")
+
     JOBS_DIR.mkdir(parents=True, exist_ok=True)
     job_id = f"job_{uuid.uuid4().hex[:16]}"
     in_path = JOBS_DIR / f"{job_id}.input.json"
     in_path.write_text(json.dumps({
         "endpoint": endpoint,
         "smiles": smiles,
-        "api_key": api_key,
+        "api_key": api_key[:8] + "***" if len(api_key) > 8 else "***",
         "charge": charge,
     }))
 
@@ -345,7 +348,7 @@ def run_pending_sync() -> int:
         in_data = json.loads(in_path.read_text())
         smiles = in_data.get("smiles", [])
         endpoint = in_data.get("endpoint", "/jobs")
-        api_key = in_data.get("api_key", "")
+        api_key = owner(job_id) or ""
 
         task_name = _TASK_MAP.get(endpoint, "src.tasks.compute_batch_task")
         task = app.tasks[task_name]

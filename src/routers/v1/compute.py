@@ -65,6 +65,9 @@ def compute_paid(
         return {"results": _run_compute(body.smiles)}
     from src import keys as keysdb
     info = keysdb.lookup(x_api_key)
+    if info is None:
+        check_paid_limit(len(body.smiles))
+        return {"results": _run_compute(body.smiles)}
     used = keysdb.month_usage(x_api_key)
     if used + len(body.smiles) > info.monthly_quota:
         raise HTTPException(

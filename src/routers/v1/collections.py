@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Annotated, Any
 
 from src.collections import service as coll_service
 from src import keys as keysdb
-from src.dependencies import check_quota, record_usage, require_api_key_or_env
+from src.dependencies import check_quota, record_usage, require_api_key_or_env, _rl, _client_ip
 
 router = APIRouter(tags=["collections"])
 
@@ -56,8 +56,10 @@ class ShareIn(BaseModel):
 @router.post("/collections")
 def create_collection(
     body: CollectionCreateIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 60, 60.0)
     key = require_api_key_or_env(x_api_key)
     c = coll_service.create_collection(key, body.name, body.description)
     return {"collection": c.to_dict()}
@@ -65,8 +67,10 @@ def create_collection(
 
 @router.get("/collections")
 def list_collections(
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 120, 60.0)
     key = require_api_key_or_env(x_api_key)
     collections = coll_service.list_collections(key)
     return {"collections": [c.to_dict() for c in collections]}
@@ -75,8 +79,10 @@ def list_collections(
 @router.get("/collections/{collection_id}")
 def get_collection(
     collection_id: str,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 120, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access:
@@ -94,8 +100,10 @@ def get_collection(
 def add_item(
     collection_id: str,
     body: CollectionItemIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 60, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role == "viewer":
@@ -108,8 +116,10 @@ def add_item(
 def remove_item(
     collection_id: str,
     item_id: int,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 60, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role == "viewer":
@@ -124,8 +134,10 @@ def remove_item(
 def update_collection(
     collection_id: str,
     body: CollectionUpdateIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 60, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role not in ("owner", "editor"):
@@ -141,8 +153,10 @@ def update_collection(
 @router.delete("/collections/{collection_id}")
 def delete_collection(
     collection_id: str,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role != "owner":
@@ -157,8 +171,10 @@ def delete_collection(
 def share_collection(
     collection_id: str,
     body: ShareIn,
+    request: Request,
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, role = coll_service.can_access(collection_id, key)
     if not can_access or role != "owner":
@@ -172,9 +188,11 @@ def share_collection(
 @router.get("/collections/{collection_id}/export")
 def export_collection(
     collection_id: str,
+    request: Request,
     format: str = "csv",
     x_api_key: Annotated[str | None, Header()] = None,
 ):
+    _rl(_client_ip(request), 30, 60.0)
     key = require_api_key_or_env(x_api_key)
     can_access, _ = coll_service.can_access(collection_id, key)
     if not can_access:

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-Mol — Self-Hosted Molecular Informatics</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0e1a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+        header {
+            background: linear-gradient(160deg, #0a0e1a 0%, #111827 50%, #0f172a 100%);
+            padding: 80px 0 60px;
+            text-align: center;
+            border-bottom: 1px solid #1e293b;
+        }
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #06b6d4, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        .tagline {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            max-width: 560px;
+            margin: 0 auto 32px;
+        }
+        .version-badge {
+            display: inline-block;
+            background: #1e293b;
+            border: 1px solid #334155;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 32px;
+        }
+        .cta-buttons {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #06b6d4, #10b981);
+            color: #fff;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25); }
+        .btn-secondary {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+        }
+        .btn-secondary:hover { background: #334155; border-color: #475569; }
+        .btn-crypto {
+            background: #1e293b;
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+        .btn-crypto:hover { background: #f59e0b; color: #0a0e1a; }
+        .btn-gold {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+            color: #0a0e1a;
+        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245, 158, 11, 0.3); }
+
+        .honest-banner {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 20px 24px;
+            max-width: 640px;
+            margin: 40px auto 0;
+            text-align: left;
+        }
+        .honest-banner h3 {
+            color: #f59e0b;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+        .honest-banner p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .honest-banner code {
+            background: #0a0e1a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+        }
+
+        .hosting-options {
+            padding: 80px 0;
+            background: #0a0e1a;
+        }
+        .hosting-options h2 {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 48px;
+            color: #f1f5f9;
+        }
+        .hosting-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .hosting-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 28px;
+            transition: all 0.2s;
+        }
+        .hosting-card:hover {
+            border-color: #06b6d4;
+            transform: translateY(-3px);
+        }
+        .hosting-card .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .badge-free { background: #064e3b; color: #10b981; }
+        .badge-rec { background: #06b6d4; color: #fff; }
+        .badge-beta { background: #78350f; color: #f59e0b; }
+        .hosting-card h3 {
+            font-size: 1.2rem;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .hosting-card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        .hosting-card .specs {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 16px;
+        }
+        .hosting-card .specs li {
+            color: #64748b;
+            font-size: 0.85rem;
+            padding: 4px 0;
+        }
+        .hosting-card .specs li::before {
+            content: "•";
+            color: #06b6d4;
+            margin-right: 8px;
+        }
+
+        .features, .how-it-works, .pricing, .screenshots {
+            padding: 80px 0;
+        }
+        .features { background: #0a0e1a; }
+        .how-it-works { background: #111827; }
+        .pricing { background: #0a0e1a; }
+        .screenshots { background: #111827; }
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            margin-bottom: 48px;
+            color: #f1f5f9;
+        }
+        .feature-grid, .steps, .pricing-grid, .shot-grid {
+            display: grid;
+            gap: 24px;
+        }
+        .feature-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .steps { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); max-width: 900px; margin: 0 auto; }
+        .pricing-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); max-width: 900px; margin: 0 auto; }
+        .shot-grid { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+        .feature-card, .step, .pricing-card, .shot-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 28px;
+        }
+        .feature-card:hover, .pricing-card:hover {
+            border-color: #06b6d4;
+            transform: translateY(-3px);
+        }
+        .feature-card { background: #111827; }
+        .step { text-align: center; background: transparent; border: none; }
+        .pricing-card { text-align: center; }
+        .pricing-card.popular {
+            border-color: #06b6d4;
+            position: relative;
+        }
+        .pricing-card.popular::before {
+            content: "POPULAR";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #06b6d4, #10b981);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 14px;
+            border-radius: 20px;
+        }
+        .step-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #06b6d4, #10b981);
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .feature-icon { font-size: 2.2rem; margin-bottom: 12px; }
+        .feature-card h3 { font-size: 1.15rem; color: #f1f5f9; margin-bottom: 8px; }
+        .feature-card p { color: #94a3b8; font-size: 0.95rem; }
+        .step h3 { color: #f1f5f9; font-size: 1.1rem; margin-bottom: 8px; }
+        .step p { color: #94a3b8; font-size: 0.9rem; }
+        .pricing-card h3 { font-size: 1.3rem; color: #f1f5f9; margin-bottom: 6px; }
+        .price { font-size: 2.5rem; font-weight: 800; color: #06b6d4; margin: 12px 0; }
+        .price span { font-size: 0.9rem; color: #64748b; }
+        .pricing-card ul {
+            list-style: none;
+            text-align: left;
+            margin: 20px 0;
+            padding: 0;
+        }
+        .pricing-card ul li {
+            padding: 6px 0;
+            color: #94a3b8;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.9rem;
+        }
+        .pricing-card ul li::before {
+            content: "✓";
+            color: #10b981;
+            margin-right: 8px;
+            font-weight: bold;
+        }
+        .pricing-card .crypto-note {
+            margin-top: 16px;
+            font-size: 0.8rem;
+            color: #f59e0b;
+        }
+        .shot-card {
+            background: #0a0e1a;
+            overflow: hidden;
+            padding: 0;
+        }
+        .shot-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .shot-card p {
+            padding: 12px 16px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        footer {
+            background: #0a0e1a;
+            border-top: 1px solid #1e293b;
+            padding: 40px 0;
+            text-align: center;
+        }
+        footer p { color: #475569; font-size: 0.85rem; }
+        footer .wallet {
+            margin-top: 12px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: #64748b;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.4rem; }
+            .tagline { font-size: 1rem; }
+            .feature-grid, .hosting-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="version-badge">v2.0.0 — Self-Hosted Molecular Platform</div>
+            <h1>Q-Mol</h1>
+            <p class="tagline">Molecular informatics, ADMET prediction, and drug-target screening — run on your own machine. No cloud lock-in. No data leaks.</p>
+            <div class="cta-buttons">
+                <a href="miner.html" class="btn btn-primary">⛏️ Start Mining</a>
+                <a href="marketplace.html" class="btn btn-gold">🏪 Sell Data</a>
+                <a href="download.html" class="btn btn-secondary">Download for Windows</a>
+            </div>
+            <div class="honest-banner">
+                <h3>⛏️ Molecular Mining — Like Crypto, But Real</h3>
+                <p>Open <strong>Start Mining</strong> and your browser automatically harvests real molecules from NIH PubChem 24/7. No server, no install, no config. Leave the tab open. It runs forever. Creates sellable datasets automatically at 100, 500, 1000 molecule milestones.</p>
+            </div>
+            <div class="honest-banner" style="margin-top:16px;">
+                <h3>🏪 Sell to Pharma Immediately</h3>
+                <p>Visit the <strong>Marketplace</strong> to list your harvested molecules for sale. Accept crypto payments. <a href="marketplace.html" style="color:#f59e0b;">Browse datasets →</a></p>
+            </div>
+        </div>
+    </header>
+
+    <section class="hosting-options" id="hosting">
+        <div class="container">
+            <h2 class="section-title">Free Hosting Options</h2>
+            <div class="hosting-grid">
+                <div class="hosting-card">
+                    <span class="badge badge-rec">RECOMMENDED</span>
+                    <h3>Your PC + Cloudflare Tunnel</h3>
+                    <p>Run on your own computer. Get a free HTTPS public URL through Cloudflare. No port forwarding needed.</p>
+                    <ul class="specs">
+                        <li>Cost: $0 forever</li>
+                        <li>RAM: Whatever your PC has (8-32 GB)</li>
+                        <li>Uptime: As long as PC stays on</li>
+                        <li>Setup: 5 minutes</li>
+                    </ul>
+                    <p style="color:#64748b;font-size:0.85rem;">Best for: personal research, primary hosting</p>
+                </div>
+                <div class="hosting-card">
+                    <span class="badge badge-free">FREE FOREVER</span>
+                    <h3>Oracle Cloud Free Tier</h3>
+                    <p>Always-free ARM instance with 24 GB RAM. More powerful than most paid VPSes. Full root access.</p>
+                    <ul class="specs">
+                        <li>Cost: $0 forever</li>
+                        <li>RAM: 24 GB (ARM)</li>
+                        <li>Uptime: 24/7</li>
+                        <li>Setup: 30 minutes</li>
+                    </ul>
+                    <p style="color:#64748b;font-size:0.85rem;">Best for: 24/7 production, team use</p>
+                </div>
+                <div class="hosting-card">
+                    <span class="badge badge-beta">EASY</span>
+                    <h3>Render</h3>
+                    <p>Native Git-based deployment. Auto-deploys on push. Free tier sleeps after 15 min inactivity.</p>
+                    <ul class="specs">
+                        <li>Cost: $0</li>
+                        <li>RAM: 512 MB</li>
+                        <li>Uptime: Sleeps when idle</li>
+                        <li>Setup: 10 minutes</li>
+                    </ul>
+                    <p style="color:#64748b;font-size:0.85rem;">Best for: quick demos, testing</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">What Q-Mol Can Do</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3>50+ Molecular Descriptors</h3>
+                    <p>MW, logP, TPSA, QED, Lipinski rules, aromaticity, ring counts, and more. Powered by RDKit.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>ML ADMET Predictions</h3>
+                    <p>Validated models: solubility (logS, R²=0.892), hERG inhibition (R²=0.800), BBB penetration, CYP450.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Drug-Target Screening</h3>
+                    <p>Screen against EGFR, AChE, BACE1. Predict binding affinity with confidence intervals.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">✨</div>
+                    <h3>De Novo Design</h3>
+                    <p>Generate novel molecules from seed scaffolds. Optimize leads with genetic algorithms.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Similarity Search</h3>
+                    <p>Find molecules by Tanimoto similarity with ECFP4 fingerprints. Search PubChem on demand.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>3D Dashboard</h3>
+                    <p>Interactive React dashboard with 3D molecular viewer (NGL), charts, and export to CSV/Excel.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Download</h3>
+                    <p>Get the ZIP or run <code>git clone</code>. No installer needed.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Run</h3>
+                    <p>Double-click <code>start.bat</code> (Windows). Python + all deps auto-install.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Use</h3>
+                    <p>API runs at <code>localhost:8000</code>. Open docs in browser. Start computing.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Share</h3>
+                    <p>Run Cloudflare Tunnel for a free public URL. Or deploy to Oracle Cloud for 24/7.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing">
+        <div class="container">
+            <h2 class="section-title">Pricing</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Free</h3>
+                    <div class="price">$0</div>
+                    <ul>
+                        <li>All 50+ descriptors</li>
+                        <li>ML predictions (logS, hERG)</li>
+                        <li>Similarity search</li>
+                        <li>Local SQLite storage</li>
+                        <li>Community support</li>
+                    </ul>
+                    <div class="crypto-note">No payment required. Forever free.</div>
+                </div>
+                <div class="pricing-card popular">
+                    <h3>Research</h3>
+                    <div class="price">$20 <span>/one-time</span></div>
+                    <ul>
+                        <li>Everything in Free</li>
+                        <li>Premium API key (10K requests)</li>
+                        <li>DTI screening (all targets)</li>
+                        <li>De novo generation</li>
+                        <li>Export to Parquet/Excel</li>
+                        <li>Email support</li>
+                    </ul>
+                    <div class="crypto-note">Pay once. Use forever. No subscription.</div>
+                </div>
+                <div class="pricing-card">
+                    <h3>Enterprise</h3>
+                    <div class="price">$100 <span>/one-time</span></div>
+                    <ul>
+                        <li>Unlimited API requests</li>
+                        <li>Custom model training</li>
+                        <li>Team accounts</li>
+                        <li>Webhook integrations</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <div class="crypto-note">Contact for custom setup.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="screenshots">
+        <div class="container">
+            <h2 class="section-title">Screenshots</h2>
+            <div class="shot-grid">
+                <div class="shot-card">
+                    <img src="demo_output.png" alt="Q-Mol Dashboard">
+                    <p>3D molecular viewer with computed descriptors</p>
+                </div>
+                <div class="shot-card">
+                    <img src="_onepager_preview.png" alt="Landing Preview">
+                    <p>Interactive data dashboard with charts</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>Q-Mol v2.0.0 — Built with Python, RDKit, FastAPI. <a href="https://github.com/yourusername/qmol" style="color:#64748b;">Open source</a>. No data lock-in.</p>
+            <p class="wallet">Payment wallet: 0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</p>
+        </div>
+    </footer>
+</body>
+</html>

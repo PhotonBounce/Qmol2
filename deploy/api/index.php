@@ -91,6 +91,12 @@ $db->exec("CREATE TABLE IF NOT EXISTS payments (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 )");
 
+$db->exec("CREATE TABLE IF NOT EXISTS dataset_molecules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dataset_id INTEGER NOT NULL,
+    molecule_id INTEGER NOT NULL
+)");
+
 $method = $_SERVER['REQUEST_METHOD'];
 $path = $_SERVER['REQUEST_URI'] ?? '';
 $path = parse_url($path, PHP_URL_PATH);
@@ -296,10 +302,10 @@ if ($path === 'listings' && $method === 'POST') {
     if (!$user) jsonOut(['error' => 'Not logged in'], 401);
     
     $dsId = $input['dataset_id'] ?? 0;
-    $name = $input['name'] ?? 'Untitled';
-    $desc = $input['description'] ?? '';
+    $name = $input['name'] ?? $input['title'] ?? 'Untitled';
+    $desc = $input['description'] ?? $input['desc'] ?? '';
     $count = $input['molecule_count'] ?? 0;
-    $price = $input['price_usd'] ?? 99;
+    $price = $input['price_usd'] ?? $input['price'] ?? 99;
     
     $stmt = $db->prepare("INSERT INTO listings (user_id, dataset_id, name, description, molecule_count, price_usd) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bindValue(1, $user['id'], SQLITE3_INTEGER);
@@ -349,10 +355,19 @@ if ($path === 'download' && $method === 'GET') {
     $token = $_GET['token'] ?? '';
     if (!$token) jsonOut(['error' => 'Missing token'], 400);
     
-    $pay = $db->querySingle("SELECT p.listing_id, l.user_id FROM payments p JOIN listings l ON p.listing_id = l.id WHERE p.download_token = ? AND p.status = 'completed'", true, $token);
-    if (!$pay) jsonOut(['error' => 'Invalid or expired token'], 404);
+    $stmt = $db->prepare("SELECT p.listing_id, l.user_id, l.dataset_id FROM payments p JOIN listings l ON p.listing_id = l.id WHERE p.download_token = :token AND p.status = 'completed'");
+    $stmt->bindValue(':token', $token, SQLITE3_TEXT);
+    $res = $stmt->execute();
+    $pay = $res->fetchArray(SQLITE3_ASSOC);
+    if (!$pay) {
+        jsonOut(['error' => 'Invalid or expired token'], 401);
+    }
     
-    $dsId = $db->querySingle("SELECT dataset_id FROM listings WHERE id = {$pay['listing_id']}");
+    $dsId = $pay['dataset_id'];
+    if (!$dsId || $dsId == 0) {
+        jsonOut(['error' => 'Dataset not linked to this listing'], 404);
+    }
+    
     $res = $db->query("SELECT m.* FROM molecules m JOIN dataset_molecules dm ON m.id = dm.molecule_id WHERE dm.dataset_id = $dsId");
     
     header('Content-Type: text/csv');

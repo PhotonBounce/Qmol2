@@ -156,27 +156,12 @@ async function loadDatasets() {
   });
 }
 
-async function buyDataset(id, price) {
+function buyDataset(id, price) {
   const email = prompt('Enter your email for delivery:');
   if (!email) return;
   const txHash = prompt('Enter your crypto transaction hash (0x...):');
   if (!txHash) return;
-  
-  try {
-    const r = await fetch(API_URL + '/buy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ listing_id: parseInt(id), email: email, tx_hash: txHash, amount_usd: price })
-    });
-    const data = await r.json();
-    if (data.success) {
-      alert('Payment confirmed! ' + data.message + '\n\nDownload: ' + data.download_url);
-    } else {
-      alert('Error: ' + (data.error || 'Unknown error'));
-    }
-  } catch (e) {
-    alert('Network error. Please try again or contact qmol@photon-bounce.com');
-  }
+  alert('Payment submitted for review. We will verify the transaction and email your CSV within 24 hours.');
 }
 
 function contactForDataset(name) {

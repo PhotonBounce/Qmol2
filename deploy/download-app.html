@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-Mol App — Download for Android</title>
+    <link rel="icon" type="image/png" href="icon-512.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0f172a;
+            --bg-elev: #111827;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --cyan: #06b6d4;
+            --cyan-glow: #22d3ee;
+            --emerald: #10b981;
+            --emerald-glow: #34d399;
+            --gold: #f59e0b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+        /* Header / Nav */
+        .nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-logo {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--cyan), var(--emerald));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-logo img { width: 28px; height: 28px; border-radius: 6px; }
+        .nav-links { display: flex; gap: 24px; align-items: center; }
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--cyan); }
+        .nav-cta {
+            background: linear-gradient(90deg, var(--cyan), var(--emerald));
+            color: #fff;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25); }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 60px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .app-icon-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 28px;
+        }
+        .app-icon {
+            width: 140px;
+            height: 140px;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(6, 182, 212, 0.2), 0 0 0 1px rgba(255,255,255,0.05);
+            position: relative;
+            z-index: 1;
+        }
+        .app-icon-glow {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(6,182,212,0.3) 0%, transparent 70%);
+            filter: blur(20px);
+            z-index: 0;
+        }
+        .hero h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        .hero .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 480px;
+            margin: 0 auto 32px;
+        }
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .badge.green { border-color: var(--emerald); color: var(--emerald-glow); }
+        .badge.cyan { border-color: var(--cyan); color: var(--cyan-glow); }
+
+        /* Download Buttons */
+        .download-row {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, var(--cyan), var(--emerald));
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(6, 182, 212, 0.25);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(6, 182, 212, 0.35); }
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { background: #334155; border-color: #475569; }
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 6px;
+        }
+
+        /* QR & Mobile Section */
+        .qr-section {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 40px 0;
+        }
+        .qr-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        .qr-wrap canvas, .qr-wrap img {
+            border-radius: 8px;
+            display: block;
+        }
+        .qr-wrap p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 12px;
+        }
+        .qr-text {
+            max-width: 300px;
+        }
+        .qr-text h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .qr-text p { color: var(--text-muted); font-size: 0.9rem; }
+        .qr-text .tip {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--cyan-glow);
+        }
+
+        /* Features */
+        .features {
+            padding: 60px 0;
+            background: var(--bg-elev);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .section-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            color: var(--text);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 24px;
+            transition: all 0.2s;
+        }
+        .feature-card:hover {
+            border-color: var(--cyan);
+            transform: translateY(-2px);
+        }
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 14px;
+            background: rgba(6, 182, 212, 0.1);
+        }
+        .feature-card h3 {
+            font-size: 1.05rem;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .feature-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Install Steps */
+        .install {
+            padding: 60px 0;
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .step {
+            text-align: center;
+            padding: 24px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+        .step-num {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan), var(--emerald));
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+        .step h4 {
+            font-size: 1rem;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .step p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .warning-box {
+            max-width: 800px;
+            margin: 32px auto 0;
+            padding: 16px 20px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 10px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .warning-box .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+        .warning-box h4 { font-size: 0.9rem; color: var(--gold); margin-bottom: 4px; }
+        .warning-box p { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* Web App CTA */
+        .webapp-cta {
+            padding: 60px 0;
+            background: var(--bg-elev);
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+        .webapp-cta h2 {
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+        }
+        .webapp-cta p {
+            color: var(--text-muted);
+            max-width: 480px;
+            margin: 0 auto 24px;
+            font-size: 0.95rem;
+        }
+
+        /* Footer */
+        footer {
+            padding: 32px 0;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        footer p { color: var(--text-dim); font-size: 0.8rem; }
+        footer .wallet {
+            font-family: 'Consolas', monospace;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 2rem; }
+            .nav-links { display: none; }
+            .qr-section { flex-direction: column; }
+            .download-row { flex-direction: column; align-items: center; }
+            .btn { width: 100%; max-width: 280px; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="index.html" class="nav-logo">
+            <img src="icon-512.png" alt="Q-Mol"> Q-Mol
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="marketplace.html">Marketplace</a>
+            <a href="miner.html">Mining</a>
+            <a href="app/index.html" class="nav-cta">Web App</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="container">
+            <div class="app-icon-wrap">
+                <div class="app-icon-glow"></div>
+                <img src="icon-512.png" alt="Q-Mol App Icon" class="app-icon">
+            </div>
+            <h1>Q-Mol for Android</h1>
+            <p class="subtitle">Molecular informatics in your pocket. Mine molecules, browse datasets, and run ADMET predictions anywhere.</p>
+            <div class="badge-row">
+                <span class="badge green">✓ Android 8.0+</span>
+                <span class="badge cyan">v2.0.0</span>
+                <span class="badge">📦 97 MB</span>
+                <span class="badge">🔓 Open Source</span>
+            </div>
+
+            <div class="download-row">
+                <a href="qmol.apk" class="btn btn-primary" download>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Download APK
+                </a>
+                <a href="https://github.com/PhotonBounce/Qmol2" target="_blank" class="btn btn-secondary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.135-.3-.54-1.53.105-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.645 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+                    View Source
+                </a>
+            </div>
+            <p class="file-size">SHA-256 checksum verified • Free forever</p>
+        </div>
+    </section>
+
+    <section class="qr-section container">
+        <div class="qr-wrap">
+            <div id="qrcode"></div>
+            <p>Scan to download on mobile</p>
+        </div>
+        <div class="qr-text">
+            <h3>Install on your phone</h3>
+            <p>Point your camera at the QR code, or open this page on your Android device and tap the download button above.</p>
+            <div class="tip">💡 The APK is ~97 MB. We recommend Wi-Fi for the download.</div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">What you get</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⛏️</div>
+                    <h3>Molecule Mining</h3>
+                    <p>Harvest real molecules from PubChem 24/7. Your phone contributes to the global dataset while you sleep.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏪</div>
+                    <h3>Dataset Marketplace</h3>
+                    <p>Browse, buy, and sell curated molecular datasets. Pay with crypto or card — your data stays yours.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧬</div>
+                    <h3>ADMET Analysis</h3>
+                    <p>On-device predictions for solubility, hERG, BBB penetration, and CYP450 with validated ML models.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>SMILES Search</h3>
+                    <p>Query by SMILES string, substructure, or similarity. Full RDKit descriptor suite in your pocket.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>3D Dashboard</h3>
+                    <p>Interactive 3D viewer with NGL, charts, and one-tap export to CSV/Excel for your reports.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Offline First</h3>
+                    <p>Core features work without internet. Your molecules are stored locally in a secure SQLite database.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="install container">
+        <h2 class="section-title">Install in 3 steps</h2>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h4>Download APK</h4>
+                <p>Tap the download button above. The file will save to your Downloads folder.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h4>Allow Unknown Sources</h4>
+                <p>When prompted, tap <strong>Settings</strong> and enable <strong>Install unknown apps</strong> for your browser.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h4>Install & Open</h4>
+                <p>Tap the downloaded file, then <strong>Install</strong>. Open Q-Mol and sign in or start mining.</p>
+            </div>
+        </div>
+        <div class="warning-box">
+            <span class="icon">⚠️</span>
+            <div>
+                <h4>Android Security Notice</h4>
+                <p>Google Play Protect may warn you because Q-Mol is distributed directly (not via Google Play). This is expected for open-source APKs. Tap <strong>More details</strong> → <strong>Install anyway</strong> to proceed. You can verify the source at <a href="https://github.com/PhotonBounce/Qmol2" target="_blank" style="color:var(--cyan);">github.com/PhotonBounce/Qmol2</a>.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="webapp-cta">
+        <div class="container">
+            <h2>Prefer not to install?</h2>
+            <p>Use the full Q-Mol web app directly in your browser — no download required. Same features, same data, zero storage.</p>
+            <a href="app/index.html" class="btn btn-secondary">Open Web App →</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>Q-Mol v2.0.0 — Built with Python, RDKit, FastAPI. <a href="https://github.com/PhotonBounce/Qmol2" style="color:var(--text-dim);">Open source</a>. No data lock-in.</p>
+            <p class="wallet">Payment wallet: 0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        new QRCode(document.getElementById("qrcode"), {
+            text: "https://photon-bounce.com/qmol/qmol.apk",
+            width: 160,
+            height: 160,
+            colorDark : "#06b6d4",
+            colorLight : "#1e293b",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    </script>
+</body>
+</html>

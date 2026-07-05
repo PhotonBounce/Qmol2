@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Q-Mol — Molecular Informatics SaaS</title>
+    <link rel="icon" type="image/png" href="../icon-512.png">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #0f172a;
+            --bg-card: #111827;
+            --bg-hover: #1e293b;
+            --border: #1e293b;
+            --border-light: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --cyan: #06b6d4;
+            --emerald: #10b981;
+            --gold: #f59e0b;
+            --red: #ef4444;
+            --purple: #8b5cf6;
+            --gradient: linear-gradient(90deg, #06b6d4, #10b981);
+            --gradient-gold: linear-gradient(90deg, #f59e0b, #fbbf24);
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --shadow-glow: 0 0 20px rgba(6,182,212,0.15);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg-primary); color: var(--text-primary); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        #app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+        .sidebar { width: 260px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; z-index: 100; }
+        .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 40px; height: 40px; background: var(--gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #fff; flex-shrink: 0; }
+        .logo-text { font-size: 1.3rem; font-weight: 700; }
+        .logo-text span { background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-menu { padding: 12px; flex: 1; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; color: var(--text-secondary); font-size: 0.95rem; font-weight: 500; text-decoration: none; margin-bottom: 2px; }
+        .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .nav-item.active { background: var(--bg-hover); color: var(--cyan); }
+        .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .nav-section { padding: 16px 14px 8px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+        .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .sidebar-footer:hover { background: var(--bg-hover); }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--gradient); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; color: #fff; flex-shrink: 0; }
+        .user-info { flex: 1; min-width: 0; }
+        .user-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-role { font-size: 0.75rem; color: var(--text-muted); }
+        .trial-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(6,182,212,0.1); color: var(--cyan); border: 1px solid rgba(6,182,212,0.2); margin: 0 16px 12px; }
+        .trial-badge.expired { background: rgba(239,68,68,0.1); color: var(--red); border-color: rgba(239,68,68,0.2); }
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .topbar { height: 60px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+        .topbar-title { font-size: 1.15rem; font-weight: 600; }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .topbar-btn { width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--bg-card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; }
+        .topbar-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .content { flex: 1; overflow-y: auto; padding: 24px; }
+        .content-inner { max-width: 1200px; margin: 0 auto; }
+        .menu-toggle { display: none; }
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .card-title { font-size: 1rem; font-weight: 600; }
+        .card-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: transform 0.2s, box-shadow 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-glow); }
+        .stat-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 12px; }
+        .stat-icon.cyan { background: rgba(6,182,212,0.1); color: var(--cyan); }
+        .stat-icon.emerald { background: rgba(16,185,129,0.1); color: var(--emerald); }
+        .stat-icon.gold { background: rgba(245,158,11,0.1); color: var(--gold); }
+        .stat-icon.purple { background: rgba(139,92,246,0.1); color: var(--purple); }
+        .stat-value { font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 0.85rem; color: var(--text-muted); }
+        .stat-change { font-size: 0.75rem; font-weight: 600; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; }
+        .stat-change.up { color: var(--emerald); }
+        .stat-change.down { color: var(--red); }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+        .btn-primary { background: var(--gradient); color: #fff; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(6,182,212,0.25); }
+        .btn-secondary { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border-light); }
+        .btn-secondary:hover { background: var(--border-light); }
+        .btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .btn-gold { background: var(--gradient-gold); color: #0a0e1a; }
+        .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(245,158,11,0.25); }
+        .btn-sm { padding: 6px 14px; font-size: 0.8rem; }
+        .btn-lg { padding: 14px 28px; font-size: 1rem; }
+        .btn-block { width: 100%; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
+        .form-input { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--bg-primary); border: 1px solid var(--border-light); color: var(--text-primary); font-size: 0.95rem; transition: all 0.15s; }
+        .form-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(6,182,212,0.1); }
+        .form-input::placeholder { color: var(--text-muted); }
+        .form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .form-error { font-size: 0.8rem; color: var(--red); margin-top: 4px; display: none; }
+        .form-error.visible { display: block; }
+        .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: var(--bg-secondary); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); white-space: nowrap; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--bg-hover); }
+        td { color: var(--text-secondary); }
+        .tag { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .tag-green { background: rgba(16,185,129,0.15); color: var(--emerald); }
+        .tag-red { background: rgba(239,68,68,0.15); color: var(--red); }
+        .tag-gold { background: rgba(245,158,11,0.15); color: var(--gold); }
+        .tag-cyan { background: rgba(6,182,212,0.15); color: var(--cyan); }
+        .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 20px; padding: 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+        .filter-group { flex: 1; min-width: 180px; }
+        .filter-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+        .filter-group input, .filter-group select { width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-primary); border: 1px solid var(--border-light); color: var(--text-primary); font-size: 0.9rem; }
+        .filter-group input:focus, .filter-group select:focus { outline: none; border-color: var(--cyan); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.2s; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; max-width: 420px; max-height: 90vh; overflow: hidden; transform: translateY(20px) scale(0.96); transition: all 0.2s; box-shadow: var(--shadow); }
+        .modal-overlay.active .modal { transform: translateY(0) scale(1); }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .modal-title { font-size: 1.1rem; font-weight: 600; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+        .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .modal-body { padding: 24px; overflow-y: auto; max-height: 60vh; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+        .modal-auth { max-width: 440px; }
+        .auth-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .auth-tab { flex: 1; padding: 10px; text-align: center; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.9rem; cursor: pointer; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); transition: all 0.15s; }
+        .auth-tab.active { background: var(--bg-hover); color: var(--cyan); border-color: var(--cyan); }
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow); transform: translateX(120%); transition: transform 0.3s ease; pointer-events: auto; min-width: 280px; max-width: 400px; }
+        .toast.show { transform: translateX(0); }
+        .toast-icon { font-size: 1.2rem; flex-shrink: 0; }
+        .toast.success { border-left: 3px solid var(--emerald); }
+        .toast.error { border-left: 3px solid var(--red); }
+        .toast.info { border-left: 3px solid var(--cyan); }
+        .toast.warning { border-left: 3px solid var(--gold); }
+        .spinner { width: 20px; height: 20px; border: 2px solid var(--border-light); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state { text-align: center; padding: 60px 20px; }
+        .empty-state-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+        .empty-state-text { font-size: 0.9rem; color: var(--text-muted); max-width: 400px; margin: 0 auto 20px; }
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .listing-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: all 0.2s; display: flex; flex-direction: column; }
+        .listing-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--border-light); }
+        .listing-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .listing-title { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+        .listing-seller { font-size: 0.8rem; color: var(--text-muted); }
+        .listing-desc { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px; flex: 1; }
+        .listing-meta { display: flex; gap: 12px; margin-bottom: 16px; font-size: 0.8rem; color: var(--text-muted); }
+        .listing-meta span { display: flex; align-items: center; gap: 4px; }
+        .listing-price { font-size: 1.4rem; font-weight: 700; color: var(--emerald); margin-bottom: 12px; }
+        .listing-actions { display: flex; gap: 8px; }
+        .trial-banner { background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(16,185,129,0.1)); border: 1px solid rgba(6,182,212,0.2); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+        .trial-banner.expired { background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2); }
+        .trial-banner-content { display: flex; align-items: center; gap: 12px; }
+        .trial-banner-icon { font-size: 1.5rem; }
+        .trial-banner-title { font-weight: 600; }
+        .trial-banner-text { font-size: 0.85rem; color: var(--text-secondary); }
+        .trial-countdown { display: flex; gap: 8px; }
+        .countdown-item { text-align: center; min-width: 48px; }
+        .countdown-value { font-size: 1.2rem; font-weight: 700; }
+        .countdown-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); }
+        .settings-section { margin-bottom: 24px; }
+        .settings-section-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 0.03em; }
+        .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .settings-row:last-child { border-bottom: none; }
+        .settings-label { font-weight: 500; }
+        .settings-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+        .toggle { position: relative; width: 44px; height: 24px; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: var(--border-light); border-radius: 24px; cursor: pointer; transition: 0.2s; }
+        .toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+        .toggle input:checked + .toggle-slider { background: var(--cyan); }
+        .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+        .mining-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+        .mining-status.active { background: rgba(16,185,129,0.1); color: var(--emerald); }
+        .mining-status.idle { background: rgba(100,116,139,0.1); color: var(--text-muted); }
+        .mining-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .mining-status.active .mining-dot { background: var(--emerald); animation: pulse 2s infinite; }
+        .mining-status.idle .mining-dot { background: var(--text-muted); }
+        .smiles-code { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 0.8rem; background: var(--bg-primary); padding: 6px 10px; border-radius: 6px; color: var(--cyan); word-break: break-all; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @media (max-width: 900px) {
+            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .menu-toggle { display: flex; }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .content { padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .filters-bar { flex-direction: column; }
+            .filter-group { min-width: 100%; }
+            .trial-banner { flex-direction: column; align-items: flex-start; }
+            .trial-countdown { width: 100%; justify-content: center; }
+            .modal { margin: 16px; }
+        }
+        [data-tooltip] { position: relative; }
+        [data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--bg-secondary); color: var(--text-primary); padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; border: 1px solid var(--border); opacity: 0; visibility: hidden; transition: all 0.15s; pointer-events: none; z-index: 100; }
+        [data-tooltip]:hover::after { opacity: 1; visibility: visible; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon">Q</div>
+            <div class="logo-text">Q-<span>Mol</span></div>
+        </div>
+        <div class="trial-badge" id="trialBadge" style="display:none"><span id="trialBadgeText">Trial</span></div>
+        <nav class="nav-menu" id="navMenu">
+            <div class="nav-section">Platform</div>
+            <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </a>
+            <a href="#molecules" class="nav-item" data-page="molecules">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31"/><path d="M14 9.3V1.99"/><path d="M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><path d="M5.52 14h-2.5"/><path d="M21.02 14h-2.5"/><path d="M13.26 18a6.47 6.47 0 0 1-.26-2 6.5 6.5 0 0 1 6.5-6.5c.36 0 .71.03 1.05.08"/><path d="M18.99 11.5a6.5 6.5 0 0 1-1.01 9.42"/></svg>
+                Molecules
+            </a>
+            <a href="#marketplace" class="nav-item" data-page="marketplace">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                Marketplace
+            </a>
+            <div class="nav-section" style="margin-top:8px">Account</div>
+            <a href="#settings" class="nav-item" data-page="settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                Settings
+            </a>
+        </nav>
+        <div class="sidebar-footer" id="userFooter" style="display:none">
+            <div class="avatar" id="userAvatar">U</div>
+            <div class="user-info">
+                <div class="user-name" id="userName">User</div>
+                <div class="user-role" id="userRole">Free Trial</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted)"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+    </aside>
+    <div class="main">
+        <div class="topbar">
+            <div style="display:flex;align-items:center;gap:12px">
+                <button class="topbar-btn menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+                <div class="topbar-title" id="pageTitle">Dashboard</div>
+            </div>
+            <div class="topbar-actions">
+                <div class="mining-status idle" id="miningStatus" style="display:none">
+                    <div class="mining-dot"></div>
+                    <span id="miningStatusText">Idle</span>
+                </div>
+                <button class="topbar-btn" data-tooltip="Notifications" id="notifBtn" style="display:none">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                </button>
+                <button class="btn btn-primary btn-sm" id="loginBtnTop" onclick="showAuthModal()">Sign In</button>
+                <button class="btn btn-secondary btn-sm" id="logoutBtnTop" onclick="logout()" style="display:none">Logout</button>
+            </div>
+        </div>
+        <div class="content">
+            <div class="content-inner">
+                <div class="page active" id="page-dashboard">
+                    <div class="trial-banner" id="trialBanner">
+                        <div class="trial-banner-content">
+                            <div class="trial-banner-icon">🎉</div>
+                            <div>
+                                <div class="trial-banner-title">Free Trial Active</div>
+                                <div class="trial-banner-text">You have <span id="trialDaysLeft">7</span> days left to explore all features.</div>
+                            </div>
+                        </div>
+                        <div class="trial-countdown" id="trialCountdown">
+                            <div class="countdown-item"><div class="countdown-value" id="cdDays">7</div><div class="countdown-label">Days</div></div>
+                            <div class="countdown-item"><div class="countdown-value" id="cdHours">0</div><div class="countdown-label">Hrs</div></div>
+                            <div class="countdown-item"><div class="countdown-value" id="cdMins">0</div><div class="countdown-label">Min</div></div>
+                            <div class="countdown-item"><div class="countdown-value" id="cdSecs">0</div><div class="countdown-label">Sec</div></div>
+                        </div>
+                        <button class="btn btn-gold btn-sm" id="upgradeBtn" onclick="showUpgradeModal()">Upgrade</button>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon cyan">🧪</div>
+                            <div class="stat-value" id="dashMolecules">0</div>
+                            <div class="stat-label">Total Molecules</div>
+                            <div class="stat-change up" id="dashMoleculesChange">+0 this week</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon emerald">⚡</div>
+                            <div class="stat-value" id="dashMiningStatus">Idle</div>
+                            <div class="stat-label">Mining Status</div>
+                            <div class="stat-change up" id="dashMiningRate">0 mol/min</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon gold">💰</div>
+                            <div class="stat-value" id="dashEarnings">$0</div>
+                            <div class="stat-label">Total Earnings</div>
+                            <div class="stat-change up" id="dashEarningsChange">+0% vs last month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">📊</div>
+                            <div class="stat-value" id="dashQED">0</div>
+                            <div class="stat-label">High-QED Molecules</div>
+                            <div class="stat-change up" id="dashQEDRate">QED ≥ 0.7</div>
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Recent Molecules</div>
+                                    <div class="card-subtitle">Latest harvested compounds</div>
+                                </div>
+                                <a href="#molecules" class="btn btn-secondary btn-sm">View All</a>
+                            </div>
+                            <div id="recentMoleculesList">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">🧬</div>
+                                    <div class="empty-state-title">No molecules yet</div>
+                                    <div class="empty-state-text">Start mining to discover molecules.</div>
+                                    <a href="../miner.html" class="btn btn-primary btn-sm" target="_blank">Open Miner</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Activity</div>
+                                    <div class="card-subtitle">Last 7 days</div>
+                                </div>
+                            </div>
+                            <div id="activityChart">
+                                <div style="height:200px;display:flex;align-items:flex-end;justify-content:space-around;padding:20px 0;gap:8px">
+                                    <div style="flex:1;background:var(--bg-hover);border-radius:6px;height:20%"></div>
+                                    <div style="flex:1;background:var(--bg-hover);border-radius:6px;height:40%"></div>
+                                    <div style="flex:1;background:var(--bg-hover);border-radius:6px;height:30%"></div>
+                                    <div style="flex:1;background:var(--bg-hover);border-radius:6px;height:60%"></div>
+                                    <div style="flex:1;background:var(--bg-hover);border-radius:6px;height:45%"></div>
+                                    <div style="flex:1;background:var(--bg-hover);border-radius:6px;height:80%"></div>
+                                    <div style="flex:1;background:var(--gradient);border-radius:6px;height:55%"></div>
+                                </div>
+                                <div style="display:flex;justify-content:space-around;font-size:0.7rem;color:var(--text-muted);text-transform:uppercase">
+                                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page" id="page-molecules">
+                    <div class="filters-bar">
+                        <div class="filter-group">
+                            <label>Search</label>
+                            <input type="text" id="molSearch" placeholder="SMILES, name, or CID..." oninput="filterMolecules()">
+                        </div>
+                        <div class="filter-group">
+                            <label>Min QED</label>
+                            <input type="number" id="molMinQED" min="0" max="1" step="0.1" placeholder="0.0 - 1.0" oninput="filterMolecules()">
+                        </div>
+                        <div class="filter-group">
+                            <label>Max LogP</label>
+                            <input type="number" id="molMaxLogP" step="0.1" placeholder="Any" oninput="filterMolecules()">
+                        </div>
+                        <div class="filter-group">
+                            <label>Lipinski</label>
+                            <select id="molLipinski" onchange="filterMolecules()">
+                                <option value="">Any</option>
+                                <option value="1">Pass</option>
+                                <option value="0">Fail</option>
+                            </select>
+                        </div>
+                        <div class="filter-group" style="flex:0;min-width:auto">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-secondary btn-sm" onclick="clearMolFilters()">Clear</button>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr><th>CID</th><th>Name</th><th>SMILES</th><th>MW</th><th>LogP</th><th>QED</th><th>TPSA</th><th>Lipinski</th><th>Date</th></tr>
+                            </thead>
+                            <tbody id="moleculesTable">
+                                <tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">Loading molecules...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="moleculesPagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px"></div>
+                </div>
+                <div class="page" id="page-marketplace">
+                    <div class="card" style="margin-bottom:20px">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Dataset Marketplace</div>
+                                <div class="card-subtitle">Buy and sell curated molecular datasets</div>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="showListDatasetModal()">List Dataset</button>
+                        </div>
+                    </div>
+                    <div class="grid-3" id="listingsGrid">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🏪</div>
+                            <div class="empty-state-title">Loading marketplace...</div>
+                            <div class="empty-state-text">Please wait while we fetch listings.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="page" id="page-settings">
+                    <div class="card" style="max-width:600px">
+                        <div class="settings-section">
+                            <div class="settings-section-title">Profile</div>
+                            <div class="form-group">
+                                <label class="form-label">Display Name</label>
+                                <input type="text" class="form-input" id="settingsName" placeholder="Your name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-input" id="settingsEmail" placeholder="you@example.com" disabled>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ETH Wallet</label>
+                                <input type="text" class="form-input" id="settingsWallet" placeholder="0x..." disabled>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="saveSettings()">Save Profile</button>
+                        </div>
+                        <div class="settings-section">
+                            <div class="settings-section-title">Preferences</div>
+                            <div class="settings-row">
+                                <div>
+                                    <div class="settings-label">Email Notifications</div>
+                                    <div class="settings-desc">Receive updates about sales and mining</div>
+                                </div>
+                                <label class="toggle"><input type="checkbox" id="prefNotif" checked><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="settings-row">
+                                <div>
+                                    <div class="settings-label">Auto-Export</div>
+                                    <div class="settings-desc">Automatically export molecules after mining</div>
+                                </div>
+                                <label class="toggle"><input type="checkbox" id="prefAutoExport"><span class="toggle-slider"></span></label>
+                            </div>
+                            <div class="settings-row">
+                                <div>
+                                    <div class="settings-label">Compact View</div>
+                                    <div class="settings-desc">Show denser tables with less padding</div>
+                                </div>
+                                <label class="toggle"><input type="checkbox" id="prefCompact"><span class="toggle-slider"></span></label>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <div class="settings-section-title">Account</div>
+                            <div class="settings-row">
+                                <div>
+                                    <div class="settings-label">Export All Data</div>
+                                    <div class="settings-desc">Download your molecules and datasets as CSV</div>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" onclick="exportData()">Export CSV</button>
+                            </div>
+                            <div class="settings-row">
+                                <div>
+                                    <div class="settings-label">Delete Account</div>
+                                    <div class="settings-desc">Permanently remove all your data</div>
+                                </div>
+                                <button class="btn btn-danger btn-sm" onclick="deleteAccount()">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="authModal">
+    <div class="modal modal-auth">
+        <div class="modal-header">
+            <div class="modal-title">Welcome to Q-Mol</div>
+            <button class="modal-close" onclick="hideAuthModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="auth-tabs">
+                <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+                <div class="auth-tab" onclick="switchAuthTab('register')">Create Account</div>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" name="email" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" name="password" placeholder="••••••••" required>
+                </div>
+                <div class="form-error" id="loginError"></div>
+                <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">Sign In</button>
+            </form>
+            <form id="registerForm" onsubmit="handleRegister(event)" style="display:none">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" name="email" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Display Name</label>
+                    <input type="text" class="form-input" name="display_name" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" name="password" placeholder="Min 8 characters" required minlength="8">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">ETH Wallet (optional)</label>
+                    <input type="text" class="form-input" name="eth_address" placeholder="0x...">
+                    <div class="form-hint">For crypto payments and receiving earnings</div>
+                </div>
+                <div class="form-error" id="registerError"></div>
+                <button type="submit" class="btn btn-primary btn-block" id="registerSubmitBtn">Create Account & Start Free Trial</button>
+                <div class="form-hint" style="text-align:center;margin-top:12px">✨ 7-day free trial included. No credit card required.</div>
+            </form>
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);text-align:center">
+                <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">Or connect with</div>
+                <button class="btn btn-secondary btn-block" onclick="connectMetaMask()" style="gap:8px">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    MetaMask
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="buyModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Purchase Dataset</div>
+            <button class="modal-close" onclick="hideBuyModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Dataset</label>
+                <div class="form-input" id="buyDatasetName" style="background:var(--bg-secondary)">—</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Price</label>
+                <div style="font-size:1.5rem;font-weight:700;color:var(--emerald)" id="buyPrice">$0</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Payment Method</label>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn btn-secondary btn-sm" id="payStripeBtn" onclick="selectPayment('stripe')" style="flex:1">💳 Stripe</button>
+                    <button class="btn btn-secondary btn-sm" id="payCryptoBtn" onclick="selectPayment('crypto')" style="flex:1">₿ Crypto</button>
+                </div>
+            </div>
+            <div class="form-group" id="payEmailGroup">
+                <label class="form-label">Email for Delivery</label>
+                <input type="email" class="form-input" id="buyEmail" placeholder="you@example.com">
+            </div>
+            <div class="form-group" id="payTxGroup" style="display:none">
+                <label class="form-label">Transaction Hash</label>
+                <input type="text" class="form-input" id="buyTxHash" placeholder="0x...">
+            </div>
+            <div class="form-error" id="buyError"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="hideBuyModal()">Cancel</button>
+            <button class="btn btn-primary" id="buyConfirmBtn" onclick="confirmPurchase()">Buy Now</button>
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="upgradeModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title">Upgrade to Pro</div>
+            <button class="modal-close" onclick="hideUpgradeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="text-align:center;margin-bottom:20px">
+                <div style="font-size:3rem;margin-bottom:12px">⭐</div>
+                <div style="font-size:1.2rem;font-weight:600;margin-bottom:8px">Unlock Full Power</div>
+                <div style="color:var(--text-muted);font-size:0.9rem">Continue mining after your trial ends</div>
+            </div>
+            <div class="grid-2" style="margin-bottom:20px">
+                <div class="card" style="text-align:center">
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Monthly</div>
+                    <div style="font-size:2rem;font-weight:700">$29<span style="font-size:0.85rem;color:var(--text-muted)">/mo</span></div>
+                    <div style="margin-top:12px;font-size:0.85rem;color:var(--text-secondary)">Unlimited molecules<br>Unlimited datasets<br>Priority support</div>
+                    <button class="btn btn-primary btn-block btn-sm" style="margin-top:16px" onclick="initiateStripe('monthly')">Subscribe</button>
+                </div>
+                <div class="card" style="text-align:center;border-color:var(--gold);position:relative">
+                    <div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--gradient-gold);color:#0a0e1a;padding:2px 10px;border-radius:10px;font-size:0.7rem;font-weight:700;white-space:nowrap">Best Value</div>
+                    <div style="font-size:0.85rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px">Yearly</div>
+                    <div style="font-size:2rem;font-weight:700">$249<span style="font-size:0.85rem;color:var(--text-muted)">/yr</span></div>
+                    <div style="margin-top:12px;font-size:0.85rem;color:var(--text-secondary)">Everything in Monthly<br>2 months free<br>API access</div>
+                    <button class="btn btn-gold btn-block btn-sm" style="margin-top:16px" onclick="initiateStripe('yearly')">Subscribe</button>
+                </div>
+            </div>
+            <div style="text-align:center;font-size:0.8rem;color:var(--text-muted)">Crypto payment also accepted. Contact support.</div>
+        </div>
+    </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script>
+const API_BASE = '/qmol/api/';
+let state = { user: null, molecules: [], listings: [], stats: null, trial: { active: true, daysLeft: 7, expiresAt: null }, currentPage: 'dashboard', paymentMethod: 'stripe', selectedListing: null, molPage: 1, molPerPage: 20, molFilters: { search: '', minQED: '', maxLogP: '', lipinski: '' }, authTab: 'login', preferences: { notifications: true, autoExport: false, compact: false } };
+document.addEventListener('DOMContentLoaded', () => { loadPreferences(); initRouting(); checkSession(); startTrialCountdown(); setInterval(() => { if (state.user) pingSession(); }, 30000); });
+function initRouting() { window.addEventListener('hashchange', () => route()); route(); }
+function route() { const hash = window.location.hash.replace('#', '') || 'dashboard'; const validPages = ['dashboard', 'molecules', 'marketplace', 'settings']; const page = validPages.includes(hash) ? hash : 'dashboard'; state.currentPage = page; document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); const pageEl = document.getElementById('page-' + page); if (pageEl) pageEl.classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); const navEl = document.querySelector('.nav-item[data-page="' + page + '"]'); if (navEl) navEl.classList.add('active'); document.getElementById('pageTitle').textContent = page.charAt(0).toUpperCase() + page.slice(1); document.getElementById('sidebar').classList.remove('open'); if (page === 'dashboard') loadDashboard(); if (page === 'molecules') loadMolecules(); if (page === 'marketplace') loadMarketplace(); if (page === 'settings') loadSettings(); }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+async function api(endpoint, options = {}) { const url = API_BASE + endpoint; const opts = { method: options.method || 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', ...options }; if (options.body) opts.body = JSON.stringify(options.body); try { const res = await fetch(url, opts); const data = await res.json().catch(() => ({})); if (!res.ok) { throw new Error(data.error || 'HTTP ' + res.status); } return data; } catch (err) { console.error('API error:', err); throw err; } }
+async function checkSession() { try { const data = await api('me'); if (data.user) { setUser(data.user); } else { showAuthModal(); } } catch (e) { showAuthModal(); } }
+async function handleLogin(e) { e.preventDefault(); const btn = document.getElementById('loginSubmitBtn'); const err = document.getElementById('loginError'); err.classList.remove('visible'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; const fd = new FormData(e.target); try { const data = await api('login', { method: 'POST', body: { email: fd.get('email'), password: fd.get('password') } }); if (data.success) { const me = await api('me'); setUser(me.user); hideAuthModal(); showToast('Welcome back!', 'success'); } } catch (e) { err.textContent = e.message || 'Login failed'; err.classList.add('visible'); } finally { btn.disabled = false; btn.textContent = 'Sign In'; } }
+async function handleRegister(e) { e.preventDefault(); const btn = document.getElementById('registerSubmitBtn'); const err = document.getElementById('registerError'); err.classList.remove('visible'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; const fd = new FormData(e.target); try { const data = await api('register', { method: 'POST', body: { email: fd.get('email'), password: fd.get('password'), display_name: fd.get('display_name') || fd.get('email').split('@')[0], eth_address: fd.get('eth_address') || null } }); if (data.success) { const trialEnds = new Date(); trialEnds.setDate(trialEnds.getDate() + 7); localStorage.setItem('qm_trial_ends', trialEnds.toISOString()); localStorage.setItem('qm_user_id', data.user_id); const me = await api('me'); setUser(me.user); hideAuthModal(); showToast('Account created! Your 7-day free trial starts now.', 'success'); route(); } } catch (e) { err.textContent = e.message || 'Registration failed'; err.classList.add('visible'); } finally { btn.disabled = false; btn.textContent = 'Create Account & Start Free Trial'; } }
+async function connectMetaMask() { if (!window.ethereum) { showToast('MetaMask not detected. Please install the extension.', 'error'); return; } try { const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }); if (accounts[0]) { const data = await api('login', { method: 'POST', body: { eth_address: accounts[0] } }); const me = await api('me'); setUser(me.user); hideAuthModal(); showToast('Wallet connected!', 'success'); } } catch (e) { showToast('MetaMask connection failed: ' + e.message, 'error'); } }
+async function logout() { try { await api('logout', { method: 'POST' }); } catch (e) {} state.user = null; localStorage.removeItem('qm_trial_ends'); localStorage.removeItem('qm_user_id'); updateUI(); showAuthModal(); showToast('Logged out', 'info'); }
+function setUser(user) { state.user = user; const trialEnds = localStorage.getItem('qm_trial_ends'); if (trialEnds) { const end = new Date(trialEnds); const now = new Date(); const diff = end - now; state.trial.active = diff > 0; state.trial.daysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24))); state.trial.expiresAt = trialEnds; } else if (user) { const end = new Date(); end.setDate(end.getDate() + 7); localStorage.setItem('qm_trial_ends', end.toISOString()); state.trial.active = true; state.trial.daysLeft = 7; state.trial.expiresAt = end.toISOString(); } updateUI(); }
+function updateUI() { const loggedIn = !!state.user; document.getElementById('loginBtnTop').style.display = loggedIn ? 'none' : 'flex'; document.getElementById('logoutBtnTop').style.display = loggedIn ? 'flex' : 'none'; document.getElementById('userFooter').style.display = loggedIn ? 'flex' : 'none'; document.getElementById('miningStatus').style.display = loggedIn ? 'inline-flex' : 'none'; document.getElementById('notifBtn').style.display = loggedIn ? 'flex' : 'none'; document.getElementById('trialBadge').style.display = loggedIn ? 'flex' : 'none'; if (state.user) { const name = state.user.display_name || state.user.email || 'User'; document.getElementById('userName').textContent = name; document.getElementById('userAvatar').textContent = name.charAt(0).toUpperCase(); document.getElementById('userRole').textContent = state.trial.active ? 'Free Trial' : (state.trial.paid ? 'Pro' : 'Trial Expired'); document.getElementById('trialBadgeText').textContent = state.trial.active ? state.trial.daysLeft + 'd left' : 'Expired'; document.getElementById('trialBadge').className = 'trial-badge' + (state.trial.active ? '' : ' expired'); } const banner = document.getElementById('trialBanner'); if (loggedIn && state.trial.active) { banner.style.display = 'flex'; banner.classList.remove('expired'); document.getElementById('trialDaysLeft').textContent = state.trial.daysLeft; document.getElementById('upgradeBtn').style.display = 'inline-flex'; } else if (loggedIn && !state.trial.active) { banner.style.display = 'flex'; banner.classList.add('expired'); banner.querySelector('.trial-banner-title').textContent = 'Trial Expired'; banner.querySelector('.trial-banner-text').textContent = 'Upgrade to continue mining molecules.'; document.getElementById('upgradeBtn').textContent = 'Upgrade Now'; document.getElementById('trialCountdown').style.display = 'none'; } else { banner.style.display = 'none'; } }
+function showAuthModal() { document.getElementById('authModal').classList.add('active'); document.getElementById('loginError').classList.remove('visible'); document.getElementById('registerError').classList.remove('visible'); }
+function hideAuthModal() { document.getElementById('authModal').classList.remove('active'); }
+function switchAuthTab(tab) { state.authTab = tab; document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(tab === 'login' ? 'sign in' : 'create'))); document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none'; document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none'; }
+function showBuyModal(listing) { state.selectedListing = listing; document.getElementById('buyDatasetName').textContent = listing.name; document.getElementById('buyPrice').textContent = '$' + listing.price_usd; document.getElementById('buyEmail').value = state.user ? state.user.email : ''; document.getElementById('buyModal').classList.add('active'); document.getElementById('buyError').classList.remove('visible'); selectPayment('stripe'); }
+function hideBuyModal() { document.getElementById('buyModal').classList.remove('active'); state.selectedListing = null; }
+function showUpgradeModal() { document.getElementById('upgradeModal').classList.add('active'); }
+function hideUpgradeModal() { document.getElementById('upgradeModal').classList.remove('active'); }
+function showListDatasetModal() { showToast('To list a dataset, create one in the Molecules page first, then visit the Listings API.', 'info'); }
+function selectPayment(method) { state.paymentMethod = method; document.getElementById('payStripeBtn').className = 'btn btn-sm ' + (method === 'stripe' ? 'btn-primary' : 'btn-secondary'); document.getElementById('payCryptoBtn').className = 'btn btn-sm ' + (method === 'crypto' ? 'btn-primary' : 'btn-secondary'); document.getElementById('payEmailGroup').style.display = method === 'stripe' ? 'block' : 'none'; document.getElementById('payTxGroup').style.display = method === 'crypto' ? 'block' : 'none'; }
+async function confirmPurchase() { if (!state.selectedListing) return; const btn = document.getElementById('buyConfirmBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; try { if (state.paymentMethod === 'stripe') { showToast('Redirecting to Stripe Checkout...', 'info'); setTimeout(() => { hideBuyModal(); showToast('Stripe integration pending. Please contact support.', 'warning'); }, 1000); } else { const tx = document.getElementById('buyTxHash').value.trim(); if (!tx) throw new Error('Transaction hash required'); const data = await api('buy', { method: 'POST', body: { listing_id: state.selectedListing.id, email: state.user.email, tx_hash: tx } }); if (data.success) { hideBuyModal(); showToast('Purchase confirmed! Check your email.', 'success'); } } } catch (e) { document.getElementById('buyError').textContent = e.message; document.getElementById('buyError').classList.add('visible'); } finally { btn.disabled = false; btn.textContent = 'Buy Now'; } }
+function initiateStripe(plan) { showToast('Stripe checkout opening for ' + plan + ' plan...', 'info'); setTimeout(() => hideUpgradeModal(), 500); }
+async function loadDashboard() { if (!state.user) return; try { const stats = await api('stats'); state.stats = stats; document.getElementById('dashMolecules').textContent = (stats.total_molecules || 0).toLocaleString(); document.getElementById('dashMoleculesChange').textContent = '+' + (stats.last_7_days || 0) + ' this week'; document.getElementById('dashEarnings').textContent = '$' + (stats.total_earnings || 0).toFixed(2); document.getElementById('dashQED').textContent = (stats.qed_good || 0).toLocaleString(); if (!state.molecules.length) { try { await fetchMolecules(); } catch (e) {} } renderRecentMolecules(); } catch (e) { console.error('Dashboard load error:', e); } }
+function renderRecentMolecules() { const container = document.getElementById('recentMoleculesList'); if (!state.molecules.length) { container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🧬</div><div class="empty-state-title">No molecules yet</div><div class="empty-state-text">Start mining to discover molecules.</div><a href="../miner.html" class="btn btn-primary btn-sm" target="_blank">Open Miner</a></div>'; return; } const recent = state.molecules.slice(0, 5); container.innerHTML = recent.map(m => '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div style="min-width:0"><div style="font-weight:500;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (m.name || 'CID ' + m.cid) + '</div><div class="smiles-code" style="margin-top:2px;font-size:0.75rem">' + m.smiles + '</div></div><div style="text-align:right;flex-shrink:0;margin-left:12px"><div style="font-weight:600;font-size:0.85rem;color:var(--emerald)">' + (m.qed ? m.qed.toFixed(2) : '—') + '</div><div style="font-size:0.7rem;color:var(--text-muted)">QED</div></div></div>').join(''); }
+async function fetchMolecules() { const cached = localStorage.getItem('qm_molecules'); if (cached) { state.molecules = JSON.parse(cached); return; } state.molecules = []; }
+async function loadMolecules() { if (!state.molecules.length) await fetchMolecules(); filterMolecules(); }
+function filterMolecules() { state.molFilters = { search: document.getElementById('molSearch').value.toLowerCase(), minQED: document.getElementById('molMinQED').value, maxLogP: document.getElementById('molMaxLogP').value, lipinski: document.getElementById('molLipinski').value }; let filtered = state.molecules.filter(m => { if (state.molFilters.search) { const s = state.molFilters.search; if (!((m.smiles && m.smiles.toLowerCase().includes(s)) || (m.name && m.name.toLowerCase().includes(s)) || (m.cid && String(m.cid).includes(s)))) return false; } if (state.molFilters.minQED !== '') { if (!m.qed || m.qed < parseFloat(state.molFilters.minQED)) return false; } if (state.molFilters.maxLogP !== '') { if (!m.logp || m.logp > parseFloat(state.molFilters.maxLogP)) return false; } if (state.molFilters.lipinski !== '') { if (String(m.lipinski_pass) !== state.molFilters.lipinski) return false; } return true; }); renderMoleculesTable(filtered); }
+function clearMolFilters() { document.getElementById('molSearch').value = ''; document.getElementById('molMinQED').value = ''; document.getElementById('molMaxLogP').value = ''; document.getElementById('molLipinski').value = ''; filterMolecules(); }
+function renderMoleculesTable(molecules) { const tbody = document.getElementById('moleculesTable'); if (!molecules.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text-muted)">No molecules found. <a href="../miner.html" target="_blank" style="color:var(--cyan)">Start mining →</a></td></tr>'; return; } const total = molecules.length; const totalPages = Math.ceil(total / state.molPerPage); const start = (state.molPage - 1) * state.molPerPage; const page = molecules.slice(start, start + state.molPerPage); tbody.innerHTML = page.map(m => '<tr><td>' + (m.cid || '—') + '</td><td>' + (m.name || '—') + '</td><td><span class="smiles-code">' + m.smiles + '</span></td><td>' + (m.mw ? m.mw.toFixed(2) : '—') + '</td><td>' + (m.logp !== undefined ? m.logp.toFixed(2) : '—') + '</td><td>' + (m.qed ? m.qed.toFixed(3) : '—') + '</td><td>' + (m.tpsa !== undefined ? m.tpsa.toFixed(1) : '—') + '</td><td>' + (m.lipinski_pass ? '<span class="tag tag-green">Pass</span>' : '<span class="tag tag-red">Fail</span>') + '</td><td>' + (m.created_at ? new Date(m.created_at).toLocaleDateString() : '—') + '</td></tr>').join(''); const pag = document.getElementById('moleculesPagination'); if (totalPages > 1) { let html = ''; for (let i = 1; i <= totalPages; i++) { html += '<button class="btn btn-sm ' + (i === state.molPage ? 'btn-primary' : 'btn-secondary') + '" onclick="state.molPage=' + i + ';filterMolecules()">' + i + '</button>'; } pag.innerHTML = html; pag.style.display = 'flex'; } else { pag.style.display = 'none'; } }
+async function loadMarketplace() { try { const data = await api('listings'); state.listings = data.listings || []; renderListings(); } catch (e) { document.getElementById('listingsGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Failed to load marketplace</div><div class="empty-state-text">' + e.message + '</div></div>'; } }
+function renderListings() { const grid = document.getElementById('listingsGrid'); if (!state.listings.length) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🏪</div><div class="empty-state-title">No listings yet</div><div class="empty-state-text">Be the first to list a dataset!</div></div>'; return; } grid.innerHTML = state.listings.map(l => '<div class="listing-card"><div class="listing-header"><div><div class="listing-title">' + l.name + '</div><div class="listing-seller">by ' + (l.seller || 'Unknown') + '</div></div><span class="tag tag-cyan">' + l.status + '</span></div><div class="listing-desc">' + (l.description || 'No description provided.') + '</div><div class="listing-meta"><span>🧪 ' + (l.molecule_count || 0) + ' molecules</span><span>📅 ' + new Date(l.created_at).toLocaleDateString() + '</span></div><div class="listing-price">$' + (l.price_usd || 0) + '</div><div class="listing-actions"><button class="btn btn-primary btn-sm btn-block" onclick="showBuyModal(' + JSON.stringify(l).replace(/'/g, '&#39;') + ')">Buy Now</button></div></div>').join(''); }
+function loadSettings() { if (!state.user) return; document.getElementById('settingsName').value = state.user.display_name || ''; document.getElementById('settingsEmail').value = state.user.email || ''; document.getElementById('settingsWallet').value = state.user.eth_address || ''; const prefs = state.preferences; document.getElementById('prefNotif').checked = prefs.notifications; document.getElementById('prefAutoExport').checked = prefs.autoExport; document.getElementById('prefCompact').checked = prefs.compact; }
+async function saveSettings() { state.preferences.notifications = document.getElementById('prefNotif').checked; state.preferences.autoExport = document.getElementById('prefAutoExport').checked; state.preferences.compact = document.getElementById('prefCompact').checked; savePreferences(); showToast('Settings saved', 'success'); }
+function loadPreferences() { try { const p = localStorage.getItem('qm_preferences'); if (p) state.preferences = { ...state.preferences, ...JSON.parse(p) }; } catch (e) {} }
+function savePreferences() { localStorage.setItem('qm_preferences', JSON.stringify(state.preferences)); }
+function exportData() { window.open(API_BASE + 'export', '_blank'); }
+function deleteAccount() { if (!confirm('WARNING: This will permanently delete all your data. Are you sure?')) return; showToast('Account deletion request sent. Contact support to complete.', 'warning'); }
+function startTrialCountdown() { updateCountdown(); setInterval(updateCountdown, 1000); }
+function updateCountdown() { if (!state.trial.expiresAt) return; const end = new Date(state.trial.expiresAt); const now = new Date(); const diff = end - now; if (diff <= 0) { state.trial.active = false; state.trial.daysLeft = 0; document.getElementById('cdDays').textContent = '0'; document.getElementById('cdHours').textContent = '0'; document.getElementById('cdMins').textContent = '0'; document.getElementById('cdSecs').textContent = '0'; updateUI(); return; } const days = Math.floor(diff / (1000 * 60 * 60 * 24)); const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)); const secs = Math.floor((diff % (1000 * 60)) / 1000); document.getElementById('cdDays').textContent = days; document.getElementById('cdHours').textContent = hours; document.getElementById('cdMins').textContent = mins; document.getElementById('cdSecs').textContent = secs; }
+async function pingSession() { try { await api('ping'); } catch (e) {} }
+function showToast(message, type) { const container = document.getElementById('toastContainer'); const toast = document.createElement('div'); const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' }; toast.className = 'toast ' + (type || 'info'); toast.innerHTML = '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span><span>' + message + '</span>'; container.appendChild(toast); requestAnimationFrame(() => toast.classList.add('show')); setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 4000); }
+window.addEventListener('message', async (e) => { if (e.data && e.data.type === 'MOLECULE_MINED') { const mol = e.data.molecule; if (mol && state.user) { try { await api('mine', { method: 'POST', body: { ...mol, user_id: state.user.id } }); state.molecules.unshift(mol); localStorage.setItem('qm_molecules', JSON.stringify(state.molecules)); showToast('Mined: ' + (mol.name || mol.smiles.substring(0, 20)) + '...', 'success'); if (state.currentPage === 'dashboard') loadDashboard(); if (state.currentPage === 'molecules') filterMolecules(); } catch (err) { showToast('Failed to save molecule: ' + err.message, 'error'); } } } });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideAuthModal(); hideBuyModal(); hideUpgradeModal(); } if (e.ctrlKey && e.key === 'k') { e.preventDefault(); if (state.currentPage === 'molecules') document.getElementById('molSearch').focus(); } });
+</script>
+</body>
+</html>

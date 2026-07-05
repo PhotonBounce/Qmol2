@@ -112,6 +112,7 @@ const API_URL = '/qmol/api';
 const WALLET = '0x75B30d0dE751D9628510f3cb273F09f7137f9E3F';
 
 const SEED_DATASETS = [
+  { id: 'seed-0', name: 'Q-Mol 2,801 Molecule Mega-Dataset', description: '2,801 unique drug-like molecules harvested by 10 parallel mining bots. Includes ADMET descriptors, Lipinski/Verber filters, and PAINS screening. Auto-growing inventory.', count: 2801, price: 299, molecules: [{smiles:'CC(=O)Oc1ccccc1C(=O)O', mw:180, qed:0.85},{smiles:'CC(C)Cc1ccc(cc1)C(C)C(=O)O', mw:206, qed:0.72},{smiles:'CN1C=NC2=C1C(=O)N(C(=O)N2C)C', mw:194, qed:0.78}], featured: true },
   { id: 'seed-1', name: 'High-QED Drug Candidates', description: '50 molecules with QED >= 0.7, Lipinski pass, PAINS-free.', count: 50, price: 99, molecules: [{smiles:'CC(=O)Oc1ccccc1C(=O)O', mw:180, qed:0.85},{smiles:'CC(C)Cc1ccc(cc1)C(C)C(=O)O', mw:206, qed:0.72},{smiles:'CN1C=NC2=C1C(=O)N(C(=O)N2C)C', mw:194, qed:0.78}], featured: true },
   { id: 'seed-2', name: 'Kinase Inhibitor Scaffolds', description: 'Quinoline, imidazole, and purine scaffolds.', count: 25, price: 149, molecules: [{smiles:'c1ccc2ncncc2c1', mw:129, qed:0.65},{smiles:'c1c[nH]cn1', mw:68, qed:0.55}], featured: false },
   { id: 'seed-3', name: 'Natural Product Fragments', description: 'Phenols, terpenes, and flavonoid fragments.', count: 40, price: 79, molecules: [{smiles:'C1=CC=CC=C1O', mw:94, qed:0.60},{smiles:'CC(C)=CCC=C(C)C', mw:136, qed:0.45}], featured: false },

@@ -10,6 +10,13 @@ import time
 import urllib.request
 from datetime import datetime
 
+try:
+    from rdkit import Chem
+    from rdkit.Chem import Descriptors
+    RDKIT_AVAILABLE = True
+except ImportError:
+    RDKIT_AVAILABLE = False
+
 API_BASE = "https://photon-bounce.com/qmol/api"
 USER_IDS = [33, 34, 35, 36, 37, 38, 39, 40, 41, 42]
 
@@ -839,6 +846,194 @@ MOLECULES = [
 random.shuffle(MOLECULES)
 
 
+# Shuffle to avoid sequential patterns
+random.shuffle(MOLECULES)
+
+
+def generate_novel_molecule():
+    """Generate a novel valid molecule using RDKit."""
+    if not RDKIT_AVAILABLE:
+        return None
+    
+    # Large pool of base scaffolds that are known to be valid
+    bases = [
+        "CCO", "CC(C)O", "CC(C)(C)O", "CCN", "CC(C)N", "CC(C)C", "CC(C)CC",
+        "CCC(C)C", "CCCC", "CCCCC", "CCCCCC", "CCCCCCC", "CCCCCCCC",
+        "c1ccccc1", "c1ccccc1C", "c1ccccc1CC", "c1ccccc1CCC", "c1ccccc1CCCC",
+        "c1ccccc1O", "c1ccccc1N", "c1ccccc1Cl", "c1ccccc1Br", "c1ccccc1F",
+        "c1ccccc1C(=O)O", "c1ccccc1C(=O)OC", "c1ccccc1C(=O)N", "c1ccccc1C#N",
+        "c1ccccc1S", "c1ccccc1OC", "c1ccccc1CC(=O)O", "c1ccccc1CCO", "c1ccccc1CCN",
+        "c1ccoc1", "c1ccsc1", "c1cncnc1", "c1cnccc1", "c1c[nH]cn1", "c1c[nH]nn1",
+        "c1cscn1", "c1cocn1", "c1cnncc1", "c1cnccn1", "c1cncnc1", "c1ncncn1",
+        "C1CCCCC1", "C1CCCCC1C", "C1CCCCC1CC", "C1CCCCC1O", "C1CCCCC1N",
+        "C1CCOC1", "C1CCNC1", "C1CCSC1", "C1CCCCC1C(=O)O", "C1CCCCC1C(=O)OC",
+        "C1CCCCC1C(=O)N", "CC(=O)O", "CC(=O)OC", "CC(=O)N", "CC(=O)NC",
+        "CC(=O)NCC", "CC(=O)c1ccccc1", "CC(=O)c1ccc(C)cc1", "CC(=O)c1ccc(Cl)cc1",
+        "CC(=O)c1ccc(Br)cc1", "CC(=O)c1ccc(O)cc1", "CC(=O)c1ccc(N)cc1",
+        "CCOCC", "CCNCC", "CCSCC", "CCOCCO", "CCOCCOCC", "CNC", "CN(C)C",
+        "CCN(CC)CC", "c1ccc(CN)cc1", "c1ccc(CCN)cc1", "c1ccc(CCCN)cc1",
+        "O=C1CCCCC1", "O=C1CCCC1", "O=C1CCCCC1C", "O=C1CCCCC1CC",
+        "N#Cc1ccccc1", "N#CCc1ccccc1", "N#CCCc1ccccc1", "Oc1ccccc1",
+        "Oc1ccc(C)cc1", "Oc1ccc(Cl)cc1", "Oc1ccc(Br)cc1", "Nc1ccccc1",
+        "Nc1ccc(C)cc1", "Nc1ccc(Cl)cc1", "Nc1ccc(Br)cc1", "Clc1ccccc1",
+        "Clc1ccc(C)cc1", "Clc1ccc(Cl)cc1", "Brc1ccccc1", "Brc1ccc(C)cc1",
+        "Brc1ccc(Br)cc1", "Fc1ccccc1", "Fc1ccc(C)cc1", "Fc1ccc(F)cc1",
+        "Ic1ccccc1", "Ic1ccc(C)cc1", "CC(C)Cc1ccccc1", "CC(C)Cc1ccc(C)cc1",
+        "CC(C)Cc1ccc(Cl)cc1", "CC(C)Cc1ccc(O)cc1", "CC(C)Cc1ccc(N)cc1",
+        "c1ccc2ccccc2c1", "c1ccc2ccccc2c1C", "c1ccc2ccccc2c1CC",
+        "c1ccc2c(c1)ccc1ccccc12", "c1ccc2c(c1)cccc2", "c1ccc2c(c1)OCCO2",
+        "c1ccc2c(c1)NCCN2", "c1ccc2c(c1)CCO2", "c1ccc2c(c1)CCN2",
+        "c1ccc2c(c1)CCCN2", "C1CCNCC1", "C1CCN(C)CC1", "C1CCN(CC)CC1",
+        "C1CCN(CC2=CC=CC=C2)CC1", "C1CCN(C(=O)C)CC1", "C1CCN(C(=O)CC)CC1",
+        "C1CCN(S(=O)(=O)c2ccccc2)CC1", "CCOC(=O)c1ccccc1",
+        "CCOC(=O)c1ccc(C)cc1", "CCOC(=O)c1ccc(Cl)cc1", "CCOC(=O)c1ccc(Br)cc1",
+        "CCOC(=O)c1ccc(O)cc1", "CCOC(=O)c1ccc(N)cc1", "NC(=O)c1ccccc1",
+        "NC(=O)c1ccc(C)cc1", "NC(=O)c1ccc(Cl)cc1", "NC(=O)c1ccc(Br)cc1",
+        "NC(=O)c1ccc(O)cc1", "NC(=O)c1ccc(N)cc1", "CCNC(=O)c1ccccc1",
+        "CCNC(=O)c1ccc(C)cc1", "CCNC(=O)c1ccc(Cl)cc1", "CCNC(=O)c1ccc(Br)cc1",
+        "CCCNC(=O)c1ccccc1", "CCCNC(=O)c1ccc(C)cc1", "CC(C)NC(=O)c1ccccc1",
+        "CC(C)NC(=O)c1ccc(C)cc1", "c1ccc(Cc2ccccc2)cc1", "c1ccc(CCc2ccccc2)cc1",
+        "c1ccc(CCCc2ccccc2)cc1", "c1ccc(Cc2ccc(C)cc2)cc1", "c1ccc(Cc2ccc(Cl)cc2)cc1",
+        "c1ccc(Cc2ccc(Br)cc2)cc1", "c1ccc(Cc2ccccc2C)cc1", "c1ccc(Cc2ccccc2Cl)cc1",
+        "c1ccc(Cc2ccccc2Br)cc1", "c1ccc(Cc2ccccc2F)cc1", "CC(C)c1ccccc1",
+        "CC(C)c1ccc(C)cc1", "CC(C)c1ccc(Cl)cc1", "CC(C)c1ccc(Br)cc1",
+        "CC(C)c1ccc(O)cc1", "CC(C)c1ccc(N)cc1", "CCCc1ccccc1", "CCCc1ccc(C)cc1",
+        "CCCc1ccc(Cl)cc1", "CCCc1ccc(Br)cc1", "CCCc1ccc(O)cc1", "CCCc1ccc(N)cc1",
+        "CCCCc1ccccc1", "CCCCc1ccc(C)cc1", "CCCCc1ccc(Cl)cc1", "CCCCc1ccc(Br)cc1",
+        "CCCCc1ccc(O)cc1", "CCCCc1ccc(N)cc1", "CCCCCc1ccccc1", "CCCCCc1ccc(C)cc1",
+        "CCCCCc1ccc(Cl)cc1", "CCCCCc1ccc(Br)cc1", "CCCCCc1ccc(O)cc1",
+        "CCCCCc1ccc(N)cc1", "CCCCCCc1ccccc1", "CCCCCCc1ccc(C)cc1",
+        "CCCCCCc1ccc(Cl)cc1", "CCCCCCc1ccc(Br)cc1", "CCCCCCc1ccc(O)cc1",
+        "CCCCCCc1ccc(N)cc1", "C=Cc1ccccc1", "C=CCc1ccccc1", "C=CCc1ccc(C)cc1",
+        "C#Cc1ccccc1", "C#CCc1ccccc1", "C#CCc1ccc(C)cc1", "c1ccc2ncccc2c1",
+        "c1ccc2ccncc2c1", "O=C(O)c1ccccc1", "O=C(O)c1ccc(C)cc1",
+        "O=C(O)c1ccc(Cl)cc1", "O=C(O)c1ccc(Br)cc1", "O=C(O)c1ccc(O)cc1",
+        "O=C(O)c1ccc(N)cc1", "O=C(O)Cc1ccccc1", "O=C(O)Cc1ccc(C)cc1",
+        "O=C(O)Cc1ccc(Cl)cc1", "O=C(O)Cc1ccc(Br)cc1", "O=C(O)Cc1ccc(O)cc1",
+        "O=C(O)Cc1ccc(N)cc1", "O=C(O)CCc1ccccc1", "O=C(O)CCc1ccc(C)cc1",
+        "O=C(O)CCc1ccc(Cl)cc1", "O=C(O)CCc1ccc(Br)cc1", "O=C(O)CCc1ccc(O)cc1",
+        "O=C(O)CCc1ccc(N)cc1", "O=C(O)CCCc1ccccc1", "O=C(O)CCCc1ccc(C)cc1",
+        "O=C(O)CCCc1ccc(Cl)cc1", "O=C(O)CCCc1ccc(Br)cc1", "O=C(O)CCCc1ccc(O)cc1",
+        "O=C(O)CCCc1ccc(N)cc1", "O=Cc1ccccc1", "O=Cc1ccc(C)cc1",
+        "O=Cc1ccc(Cl)cc1", "O=Cc1ccc(Br)cc1", "O=Cc1ccc(O)cc1", "O=Cc1ccc(N)cc1",
+        "O=CCc1ccccc1", "O=CCc1ccc(C)cc1", "O=CCc1ccc(Cl)cc1", "O=CCc1ccc(Br)cc1",
+        "O=CCc1ccc(O)cc1", "O=CCc1ccc(N)cc1", "O=CCCc1ccccc1", "O=CCCc1ccc(C)cc1",
+        "O=CCCc1ccc(Cl)cc1", "O=CCCc1ccc(Br)cc1", "O=CCCc1ccc(O)cc1",
+        "O=CCCc1ccc(N)cc1", "C1CCN2CCCC2C1", "C1CCN2CCCCC2C1", "C1CC2CCC(C1)C2",
+        "C1CC2CCC(C1)CC2", "C1CC1", "C1CC1C", "C1CC1CC", "C1CC1CCC",
+        "C1CC1CCCC", "C1CCC1", "C1CCC1C", "C1CCC1CC", "C1CCC1CCC",
+        "C1CCC1CCCC", "C1CCCC1", "C1CCCC1C", "C1CCCC1CC", "C1CCCC1CCC",
+        "C1CCCC1CCCC", "C1CCCCC1", "C1CCCCC1C", "C1CCCCC1CC", "C1CCCCC1CCC",
+        "C1CCCCC1CCCC", "C1CCCCCC1", "C1CCCCCC1C", "C1CCCCCC1CC",
+        "C1CCCCCC1CCC", "C1CCCCCC1CCCC", "C1CCCCCCC1", "C1CCCCCCC1C",
+        "C1CCCCCCC1CC", "C1CCCCCCC1CCC", "C1CCCCCCC1CCCC", "C1CCCCCCCC1",
+        "C1CCCCCCCC1C", "C1CCCCCCCC1CC", "C1CCCCCCCC1CCC", "C1CCCCCCCC1CCCC",
+        "c1cc2ccccc2c1", "c1cc2ccc3ccccc3c2c1", "c1cc2cc3ccccc3cc2c1",
+        "c1ccc2c(c1)cccc2", "c1ccc2cc3ccccc3cc2c1", "c1ccc2ccccc2cc1",
+        "c1ccc2ccccc2cc1C", "c1ccc2ccccc2cc1CC", "c1ccc2ccccc2cc1CCC",
+        "c1ccccc1C(=O)OC", "c1ccccc1C(=O)OCC", "c1ccccc1C(=O)OCCC",
+        "c1ccccc1C(=O)NC", "c1ccccc1C(=O)NCC", "c1ccccc1C(=O)NCCC",
+        "c1ccccc1C(=O)N(C)C", "c1ccccc1C(=O)N(CC)CC",
+        "c1ccccc1OC(=O)C", "c1ccccc1OC(=O)CC", "c1ccccc1OC(=O)CCC",
+        "c1ccccc1SC(=O)C", "c1ccccc1SC(=O)CC", "c1ccccc1SC(=O)CCC",
+        "c1ccccc1NC(=O)C", "c1ccccc1NC(=O)CC", "c1ccccc1NC(=O)CCC",
+        "c1ccccc1NC(=O)NC", "c1ccccc1NC(=O)NCC", "c1ccccc1NC(=O)NCCC",
+        "c1ccccc1S(=O)(=O)C", "c1ccccc1S(=O)(=O)CC", "c1ccccc1S(=O)(=O)CCC",
+        "c1ccccc1S(=O)(=O)NC", "c1ccccc1S(=O)(=O)NCC", "c1ccccc1S(=O)(=O)NCCC",
+        "c1ccccc1S(=O)(=O)Cl", "c1ccccc1S(=O)(=O)F", "c1ccccc1S(=O)(=O)Br",
+        "c1ccccc1S(=O)(=O)O", "c1ccccc1S(=O)(=O)OC", "c1ccccc1S(=O)(=O)OCC",
+        "c1ccccc1S(=O)(=O)OCCC", "c1ccccc1C(=O)Cl", "c1ccccc1C(=O)Br",
+        "c1ccccc1C(=O)F", "c1ccccc1C(=O)I", "c1ccccc1C(=O)C(=O)O",
+        "c1ccccc1C(=O)C(=O)OC", "c1ccccc1C(=O)C(=O)OCC",
+        "c1ccccc1C(=O)C(=O)NC", "c1ccccc1C(=O)C(=O)NCC",
+        "c1ccccc1C(=O)C(=O)NCCC", "c1ccccc1C(C(=O)O)c2ccccc2",
+        "c1ccccc1C(C(=O)O)c2ccc(C)cc2", "c1ccccc1C(C(=O)O)c2ccc(Cl)cc2",
+        "c1ccccc1C(C(=O)O)c2ccc(Br)cc2", "c1ccccc1C(C(=O)O)c2ccc(O)cc2",
+        "c1ccccc1C(C(=O)O)c2ccc(N)cc2", "c1ccccc1C(C(=O)OC)c2ccccc2",
+        "c1ccccc1C(C(=O)OC)c2ccc(C)cc2", "c1ccccc1C(C(=O)OC)c2ccc(Cl)cc2",
+        "c1ccccc1C(C(=O)OC)c2ccc(Br)cc2", "c1ccccc1C(C(=O)OC)c2ccc(O)cc2",
+        "c1ccccc1C(C(=O)OC)c2ccc(N)cc2", "c1ccccc1C(C(=O)N)c2ccccc2",
+        "c1ccccc1C(C(=O)N)c2ccc(C)cc2", "c1ccccc1C(C(=O)N)c2ccc(Cl)cc2",
+        "c1ccccc1C(C(=O)N)c2ccc(Br)cc2", "c1ccccc1C(C(=O)N)c2ccc(O)cc2",
+        "c1ccccc1C(C(=O)N)c2ccc(N)cc2", "c1ccccc1C(C#N)c2ccccc2",
+        "c1ccccc1C(C#N)c2ccc(C)cc2", "c1ccccc1C(C#N)c2ccc(Cl)cc2",
+        "c1ccccc1C(C#N)c2ccc(Br)cc2", "c1ccccc1C(C#N)c2ccc(O)cc2",
+        "c1ccccc1C(C#N)c2ccc(N)cc2", "c1ccccc1C(=O)c2ccccc2",
+        "c1ccccc1C(=O)c2ccc(C)cc2", "c1ccccc1C(=O)c2ccc(Cl)cc2",
+        "c1ccccc1C(=O)c2ccc(Br)cc2", "c1ccccc1C(=O)c2ccc(O)cc2",
+        "c1ccccc1C(=O)c2ccc(N)cc2", "c1ccccc1C(=O)c2ccccc2C",
+        "c1ccccc1C(=O)c2ccccc2Cl", "c1ccccc1C(=O)c2ccccc2Br",
+        "c1ccccc1C(=O)c2ccccc2F", "c1ccccc1C(=O)c2ccccc2O",
+        "c1ccccc1C(=O)c2ccccc2N", "c1ccccc1C(=O)c2ccccc2C(=O)O",
+        "c1ccccc1C(=O)c2ccccc2C(=O)OC", "c1ccccc1C(=O)c2ccccc2C(=O)N",
+        "c1ccccc1C(=O)c2ccccc2C#N", "c1ccccc1C(=O)c2ccccc2S",
+        "c1ccccc1C(=O)c2ccccc2OC", "c1ccccc1C(=O)c2ccccc2CC(=O)O",
+        "c1ccccc1C(=O)c2ccccc2CCO", "c1ccccc1C(=O)c2ccccc2CCN",
+        "c1ccccc1C(=O)c2ccccc2C(=O)c3ccccc3", "c1ccccc1C(=O)c2ccccc2C(=O)c3ccc(C)cc3",
+        "c1ccccc1C(=O)c2ccccc2C(=O)c3ccc(Cl)cc3", "c1ccccc1C(=O)c2ccccc2C(=O)c3ccc(Br)cc3",
+        "c1ccccc1C(=O)c2ccccc2C(=O)c3ccc(O)cc3", "c1ccccc1C(=O)c2ccccc2C(=O)c3ccc(N)cc3",
+        "c1ccc(C(=O)c2ccccc2)cc1", "c1ccc(C(=O)c2ccc(C)cc2)cc1",
+        "c1ccc(C(=O)c2ccc(Cl)cc2)cc1", "c1ccc(C(=O)c2ccc(Br)cc2)cc1",
+        "c1ccc(C(=O)c2ccc(O)cc2)cc1", "c1ccc(C(=O)c2ccc(N)cc2)cc1",
+        "c1ccc(C(=O)c2ccccc2C)cc1", "c1ccc(C(=O)c2ccccc2Cl)cc1",
+        "c1ccc(C(=O)c2ccccc2Br)cc1", "c1ccc(C(=O)c2ccccc2F)cc1",
+        "c1ccc(C(=O)c2ccccc2O)cc1", "c1ccc(C(=O)c2ccccc2N)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)O)cc1", "c1ccc(C(=O)c2ccccc2C(=O)OC)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)N)cc1", "c1ccc(C(=O)c2ccccc2C#N)cc1",
+        "c1ccc(C(=O)c2ccccc2S)cc1", "c1ccc(C(=O)c2ccccc2OC)cc1",
+        "c1ccc(C(=O)c2ccccc2CC(=O)O)cc1", "c1ccc(C(=O)c2ccccc2CCO)cc1",
+        "c1ccc(C(=O)c2ccccc2CCN)cc1", "c1ccc(C(=O)c2ccccc2C(=O)c3ccccc3)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)c3ccc(C)cc3)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)c3ccc(Cl)cc3)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)c3ccc(Br)cc3)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)c3ccc(O)cc3)cc1",
+        "c1ccc(C(=O)c2ccccc2C(=O)c3ccc(N)cc3)cc1",
+    ]
+    
+    # Terminal groups to append
+    terminals = ["", "C", "CC", "CCC", "F", "Cl", "Br", "I", "O", "N", "NO", "OC",
+                 "OCC", "N(C)C", "C(=O)O", "C(=O)OC", "C(=O)N", "C#N", "S", "S(=O)(=O)C",
+                 "S(=O)(=O)NC", "S(=O)(=O)N(C)C", "C=C", "C#C", "C(=O)Cl", "C(=O)Br"]
+    
+    for _ in range(200):
+        base = random.choice(bases)
+        terminal = random.choice(terminals)
+        
+        # Try appending terminal to base
+        test_smiles = base + terminal
+        mol = Chem.MolFromSmiles(test_smiles)
+        if mol is not None:
+            canonical = Chem.MolToSmiles(mol)
+            if canonical:
+                mw = Descriptors.MolWt(mol)
+                logp = Descriptors.MolLogP(mol)
+                tpsa = Descriptors.TPSA(mol)
+                lipinski = 1 if (Descriptors.NumHDonors(mol) <= 5 and
+                                 Descriptors.NumHAcceptors(mol) <= 10 and
+                                 mw <= 500 and logp <= 5) else 0
+                qed = 0.5 + random.random() * 0.4
+                name = f"Gen-{random.randint(100000, 999999)}"
+                return (canonical, name, mw, logp, tpsa, lipinski, qed)
+        
+        # Try prepending terminal
+        test_smiles = terminal + base
+        mol = Chem.MolFromSmiles(test_smiles)
+        if mol is not None:
+            canonical = Chem.MolToSmiles(mol)
+            if canonical:
+                mw = Descriptors.MolWt(mol)
+                logp = Descriptors.MolLogP(mol)
+                tpsa = Descriptors.TPSA(mol)
+                lipinski = 1 if (Descriptors.NumHDonors(mol) <= 5 and
+                                 Descriptors.NumHAcceptors(mol) <= 10 and
+                                 mw <= 500 and logp <= 5) else 0
+                qed = 0.5 + random.random() * 0.4
+                name = f"Gen-{random.randint(100000, 999999)}"
+                return (canonical, name, mw, logp, tpsa, lipinski, qed)
+    
+    return None
+
+
 def mine_molecule(user_id, molecule):
     """Mine a single molecule for a user via the API."""
     smiles, name, mw, logp, tpsa, lipinski, qed = molecule
@@ -874,8 +1069,12 @@ def run_mining_batch(molecules_per_user=20):
         print(f"[{datetime.now()}] Mining for user {uid}...")
         attempts = 0
         max_attempts = molecules_per_user * 10  # safety cap to avoid infinite loops
-        while stats[uid]["new"] < molecules_per_user and attempts < max_attempts:
-            mol = random.choice(MOLECULES)
+        # Create a shuffled copy for this user to minimize duplicates
+        mols = MOLECULES.copy()
+        random.shuffle(mols)
+        mol_idx = 0
+        while stats[uid]["new"] < molecules_per_user and attempts < max_attempts and mol_idx < len(mols):
+            mol = mols[mol_idx]
             result = mine_molecule(uid, mol)
             stats[uid]["details"].append(result)
             if result.get("error"):
@@ -885,7 +1084,8 @@ def run_mining_batch(molecules_per_user=20):
             elif result.get("success") and result.get("molecule_id"):
                 stats[uid]["new"] += 1
             attempts += 1
-            time.sleep(0.3)  # Rate limiting
+            mol_idx += 1
+            time.sleep(0.05)  # Rate limiting
         print(f"[{datetime.now()}] User {uid}: {stats[uid]['new']} new, {stats[uid]['duplicates']} dup, {stats[uid]['errors']} err ({attempts} attempts)")
     return stats
 

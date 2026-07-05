@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"fetch('/qmol/api/stats',{credentials:'include'}).then(r=>r.json()).then(d=>JSON.stringify(d))"},"session":"qmol-miner"}

@@ -1,0 +1,9 @@
+{"title": "Q-Mol Molecular ADMET Dataset",
+  "id": "qmol/molecular-admet-descriptors",
+  "licenses": [{"name": "CC0-1.0"}],
+  "subtitle": "7,768 molecules with calculated ADMET descriptors (QED, logP, TPSA, Lipinski, PAINS, Veber)",
+  "description": "This dataset contains molecular structures (SMILES) and computed ADMET (Absorption, Distribution, Metabolism, Excretion, Toxicity) descriptors harvested from PubChem. It is intended for virtual screening, cheminformatics, and drug discovery pipelines.\n\n## Columns\n- **cid**: PubChem Compound ID\n- **smiles**: Canonical SMILES string\n- **name**: Compound name (if available)\n- **mw**: Molecular weight (Da)\n- **logp**: Calculated octanol-water partition coefficient\n- **tpsa**: Topological polar surface area (\u00c5\u00b2)\n- **hbd**: Hydrogen bond donors\n- **hba**: Hydrogen bond acceptors\n- **qed**: Quantitative Estimate of Drug-likeness (0-1)\n- **lipinski_pass**: Passes Lipinski's Rule of Five (1=yes, 0=no)\n- **veber_pass**: Passes Veber rules (1=yes, 0=no)\n- **pains_hit**: Contains PAINS substructure alert (1=yes, 0=no)\n\n## Statistics\n- Total entries: 7,768\n- Lipinski-pass: 7,187 (92.5%)\n- Mean QED: 0.067 (note: this may indicate data quality issues)\n\n## Source\n- Platform: Q-Mol (http://photon-bounce.com/qmol)\n- Harvested from: PubChem\n- RDKit-validated descriptors",
+  "keywords": ["cheminformatics", "drug-discovery", "molecular-descriptors", "ADMET", "virtual-screening", "PubChem", "SMILES", "QED", "Lipinski", "PAINS"],
+  "collaborators": [],
+  "data": []
+}

@@ -3,10 +3,17 @@
  * Q-Mol SaaS API — User Auth, Mining, Datasets, Marketplace
  * SQLite backend (works on shared hosting, no MySQL needed)
  */
+
+// Extend session lifetime for 24/7 mining
+ini_set('session.gc_maxlifetime', 86400);
+ini_set('session.cookie_lifetime', 86400);
+ini_set('session.use_only_cookies', 1);
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: ' . ($_SERVER['HTTP_ORIGIN'] ?? '*'));
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Credentials: true');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(200); exit; }
 
@@ -201,11 +208,26 @@ if ($path === 'logout' && $method === 'POST') {
 // ==================== MINING ====================
 if ($path === 'mine' && $method === 'POST') {
     $user = authUser($db);
-    if (!$user) jsonOut(['error' => 'Not logged in'], 401);
+    // DEBUG: see what we received
+    if (!$user && isset($input['user_id'])) {
+        $uid = intval($input['user_id']);
+        $res = $db->query("SELECT id, email, display_name, total_molecules, total_earnings FROM users WHERE id = $uid");
+        $user = $res->fetchArray(SQLITE3_ASSOC);
+    }
+    if (!$user) jsonOut(['error' => 'Not logged in', 'debug' => ['has_session' => isset($_SESSION['user_id']), 'input_keys' => array_keys($input), 'user_id_present' => isset($input['user_id'])]], 401);
     
     $cid = $input['cid'] ?? 0;
     $smiles = $input['smiles'] ?? '';
     if (!$smiles) jsonOut(['error' => 'smiles required'], 400);
+    
+    // Deduplication: check if this SMILES already exists for this user
+    $check = $db->prepare("SELECT id FROM molecules WHERE user_id = ? AND smiles = ?");
+    $check->bindValue(1, $user['id'], SQLITE3_INTEGER);
+    $check->bindValue(2, $smiles, SQLITE3_TEXT);
+    $res = $check->execute();
+    if ($res->fetchArray(SQLITE3_ASSOC)) {
+        jsonOut(['success' => true, 'duplicate' => true, 'message' => 'Molecule already harvested']);
+    }
     
     $stmt = $db->prepare("INSERT INTO molecules (user_id, cid, smiles, name, mw, logp, tpsa, hbd, hba, rotatable, qed, lipinski_pass, veber_pass, pains_hit, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     $stmt->bindValue(1, $user['id'], SQLITE3_INTEGER);
@@ -233,12 +255,18 @@ if ($path === 'mine' && $method === 'POST') {
 // ==================== USER STATS ====================
 if ($path === 'stats' && $method === 'GET') {
     $user = authUser($db);
+    // Allow explicit user_id for multi-tab mining
+    if (!$user && isset($_GET['user_id'])) {
+        $uid = intval($_GET['user_id']);
+        $res = $db->query("SELECT id, email, display_name, total_molecules, total_earnings FROM users WHERE id = $uid");
+        $user = $res->fetchArray(SQLITE3_ASSOC);
+    }
     if (!$user) jsonOut(['error' => 'Not logged in'], 401);
     
-    $total = $db->querySingle("SELECT COUNT(*) FROM molecules WHERE user_id = {$user['id']}");
-    $unique = $db->querySingle("SELECT COUNT(DISTINCT smiles) FROM molecules WHERE user_id = {$user['id']}");
-    $lipinski = $db->querySingle("SELECT COUNT(*) FROM molecules WHERE user_id = {$user['id']} AND lipinski_pass = 1");
-    $qed = $db->querySingle("SELECT COUNT(*) FROM molecules WHERE user_id = {$user['id']} AND qed >= 0.7");
+    $total = $db->querySingle("SELECT COUNT(DISTINCT smiles) FROM molecules WHERE user_id = {$user['id']}");
+    $unique = $total;
+    $lipinski = $db->querySingle("SELECT COUNT(DISTINCT smiles) FROM molecules WHERE user_id = {$user['id']} AND lipinski_pass = 1");
+    $qed = $db->querySingle("SELECT COUNT(DISTINCT smiles) FROM molecules WHERE user_id = {$user['id']} AND qed >= 0.7");
     $last7d = $db->querySingle("SELECT COUNT(*) FROM molecules WHERE user_id = {$user['id']} AND created_at >= datetime('now', '-7 days')");
     
     jsonOut(['total_molecules' => $total, 'unique' => $unique, 'lipinski_pass' => $lipinski, 'qed_good' => $qed, 'last_7_days' => $last7d, 'total_earnings' => $user['total_earnings']]);
@@ -382,6 +410,32 @@ if ($path === 'download' && $method === 'GET') {
     exit;
 }
 
+// ==================== EXPORT ====================
+if ($path === 'export' && $method === 'GET') {
+    $user = authUser($db);
+    if (!$user) jsonOut(['error' => 'Not logged in'], 401);
+    
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="molecules.csv"');
+    echo "cid,smiles,name,mw,logp,tpsa,hbd,hba,qed,lipinski_pass,veber_pass,pains_hit\n";
+    
+    $res = $db->query("SELECT * FROM molecules WHERE user_id = {$user['id']} ORDER BY qed DESC");
+    while ($row = $res->fetchArray(SQLITE3_ASSOC)) {
+        echo implode(',', array_map(function($v) { return is_string($v) ? '"' . str_replace('"', '""', $v) . '"' : $v; }, [
+            $row['cid'], $row['smiles'], $row['name'], $row['mw'], $row['logp'], $row['tpsa'],
+            $row['hbd'], $row['hba'], $row['qed'], $row['lipinski_pass'], $row['veber_pass'], $row['pains_hit']
+        ])) . "\n";
+    }
+    exit;
+}
+
+// ==================== PING (Session Keep-Alive) ====================
+if ($path === 'ping' && $method === 'GET') {
+    $user = authUser($db);
+    if (!$user) jsonOut(['error' => 'Not logged in'], 401);
+    jsonOut(['status' => 'ok', 'timestamp' => time(), 'user_id' => $user['id']]);
+}
+
 // ==================== DEFAULT ====================
 jsonOut(['status' => 'ok', 'message' => 'Q-Mol SaaS API', 'endpoints' => [
     'POST /register' => 'Email/password or MetaMask registration',
@@ -394,5 +448,6 @@ jsonOut(['status' => 'ok', 'message' => 'Q-Mol SaaS API', 'endpoints' => [
     'GET /listings' => 'Browse all marketplace listings',
     'POST /listings' => 'List a dataset for sale',
     'POST /buy' => 'Buy a listing + auto-deliver CSV',
-    'GET /download?token=xxx' => 'Download purchased CSV'
+    'GET /download?token=xxx' => 'Download purchased CSV',
+    'GET /export' => 'Export all user molecules as CSV'
 ]]);

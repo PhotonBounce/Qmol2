@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"(() => { const names = []; document.querySelectorAll('a[href*='/in/'] span[dir=\"ltr\"]').forEach(el => { if(el.textContent.trim().length > 2 && el.textContent.trim().length < 50) names.push(el.textContent.trim()); }); return JSON.stringify(names.slice(0,20)); })()"},"session":"qmol-outreach-2026"}

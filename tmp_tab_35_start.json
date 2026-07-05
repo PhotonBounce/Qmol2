@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"window.scrollTo(0,500); setTimeout(function(){ Array.from(document.querySelectorAll('button')).find(function(b){return b.innerText.includes('START MINING')}).click(); },1000);"},"session":"qmol-miner"}

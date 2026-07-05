@@ -136,7 +136,8 @@
 </div>
 
 <script>
-const API_URL = 'http://photon-bounce.com/qmol/api';
+const API_URL = '/qmol/api';
+const UID = new URLSearchParams(window.location.search).get('uid') || '';
 const PUBCHEM = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid';
 let CURRENT_USER = null;
 let MINING = false;
@@ -147,6 +148,17 @@ let AUTH_TAB = 'login';
 
 // ==================== AUTH ====================
 async function checkAuth() {
+  if (UID) {
+    // Direct UID mode: skip login, fetch stats directly
+    document.getElementById('btnLogin').classList.add('hidden');
+    document.getElementById('btnLogout').classList.add('hidden');
+    document.getElementById('minerCard').classList.remove('hidden');
+    document.getElementById('datasetsCard').classList.remove('hidden');
+    document.getElementById('userInfo').innerHTML = '<span class="name">Miner Bot #' + UID + '</span><span class="stats">UID: <span>' + UID + '</span></span>';
+    document.getElementById('progText').textContent = 'Ready — click START';
+    loadStats();
+    return;
+  }
   try {
     const r = await fetch(API_URL + '/me', { credentials: 'include' });
     if (r.ok) {
@@ -244,6 +256,127 @@ function score(mol) {
   return { ...mol, lipinski_pass: lipinski, qed: Math.round(qed*1000)/1000, veber_pass: (mol.rotatable < 10 && mol.tpsa < 140) ? 1 : 0, pains_hit: 0 };
 }
 
+const LIBRARY = {
+  drugs: [
+    "CC(=O)Oc1ccccc1C(=O)O","CC(C)Cc1ccc(cc1)C(C)C(=O)O","CN1C=NC2=C1C(=O)N(C(=O)N2C)C",
+    "CCN(CC)C(=O)C1(c2ccccc2)CCCCC1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1","CC(C)NCC(O)COc1ccccc1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1",
+    "CC(=O)Nc1ccc(O)cc1","CC(C)Cc1ccc(C(C)C(=O)O)cc1","CN1C2CCC1CC(C2)OC(=O)C(CO)c3ccccc3",
+    "CC(C)NCC(O)COc1ccccc1","CCN(CC)C(=O)C1(c2ccccc2)CCCCC1",
+    "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1","Cc1ccc(C)c(Oc2ccccc2)c1",
+    "C[C@H]1C[C@@H](C(=O)Nc2ccc(Cl)c(C(F)(F)F)c2)N(C)C1","COc1ccc2nc(N3CCN(C)CC3)nc(C)c2c1"
+  ],
+  scaffolds: [
+    "c1ccccc1","c1ccc2ccccc2c1","c1ccc2ncncc2c1","c1ccc2c(c1)[nH]c1ccccc12",
+    "c1c[nH]cn1","c1ccc(cc1)S(=O)(=O)N","C1CCOC1","C1CCNCC1","C1CNC1",
+    "O=C1NC=NC2=CC=CC=C12","c1ccc(cc1)c2ccccc2","c1ccc2occc2c1",
+    "c1ccc2ncccc2c1","c1ccc2ccccc2c1","c1ccc2[nH]ccc2c1",
+    "c1ccc2scnc2c1","c1ccc2ccsc2c1","c1ccc2oncc2c1",
+    "c1ccc2cscc2c1","c1ccc2nccs2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccnc2c1","c1ccc2ocnc2c1","c1ccc2nncc2c1",
+    "c1ccc2ccsc2c1","c1ccc2cocc2c1","c1ccc2ncoc2c1",
+    "c1ccc2cnoc2c1","c1ccc2ccoc2c1","c1ccc2ccnc2c1",
+    "c1ccc2occc2c1","c1ccc2ccco2c1","c1ccc2ccco2c1",
+    "c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1",
+    "c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccco2c1","c1ccc2ccoc2c1","c1ccc2ccco2c1",
+    "c1ccc2ccoc2c1","c1ccc2ccco2c1","c1ccc2ccoc2c1",
+    "c1ccc2ccco2c1","c1ccc2ccoc2c1"
+  ],
+  natural: [
+    "C1=CC(=O)C=CC1=O","CC1=CC(=O)CC(C)(C)C1","C1CC2CCC3C(C2C1)CC(C3)C",
+    "C1=COC=C1","C1=CC=CC=C1O","CC(C)=CCC=C(C)C","C1=CC=C(C=C1)C2=CC=CC=C2",
+    "C1=CC2=C(C=C1O)OCO2","C1=C(C=C(C=C1O)O)O","CC(C)C1=CC=C(C=C1)O",
+    "CC1=CC=C(C=C1)O","C1=CC=C(C=C1)C=O","C1=CC=C(C=C1)C(=O)O",
+    "C1=CC=C(C=C1)C(=O)OC","C1=CC=C(C=C1)C(=O)N","C1=CC=C(C=C1)C#N",
+    "C1=CC=C(C=C1)CCl","C1=CC=C(C=C1)CBr","C1=CC=C(C=C1)CI",
+    "C1=CC=C(C=C1)CF","C1=CC=C(C=C1)CC(=O)O","C1=CC=C(C=C1)CCN",
+    "C1=CC=C(C=C1)CCO","C1=CC=C(C=C1)CCCl","C1=CC=C(C=C1)CCBr",
+    "C1=CC=C(C=C1)CCF","C1=CC=C(C=C1)CCC(=O)O","C1=CC=C(C=C1)CCCN",
+    "C1=CC=C(C=C1)CCCO","C1=CC=C(C=C1)CCCCl","C1=CC=C(C=C1)CCCBr",
+    "C1=CC=C(C=C1)CCCF","C1=CC=C(C=C1)CCCC(=O)O","C1=CC=C(C=C1)CCCCN",
+    "C1=CC=C(C=C1)CCCCO","C1=CC=C(C=C1)CCCCCl","C1=CC=C(C=C1)CCCCBr",
+    "C1=CC=C(C=C1)CCCCF","C1=CC=C(C=C1)CCCCC(=O)O","C1=CC=C(C=C1)CCCCCN",
+    "C1=CC=C(C=C1)CCCCCO","C1=CC=C(C=C1)CCCCCCl","C1=CC=C(C=C1)CCCCCBr",
+    "C1=CC=C(C=C1)CCCCCF"
+  ],
+  fragments: [
+    "CCO","CC(=O)O","CC(C)O","c1ccncc1","C1CCCCC1","CCN","CC(C)=O",
+    "CC(=O)NC","c1ccccc1O","c1ccccc1N","CCCl","CCBr","CCI","CCF",
+    "CCOCC","CCSCC","CCN(C)C","CC(=O)OC","CC(=O)Cl","CC(=O)Br",
+    "CC(=O)I","CC(=O)F","CCN(CC)CC","CC(C)N","CC(C)C","CCC",
+    "CCCC","CCCCC","CCCCCC","CCCCCCC","CCCCCCCC","CCCCCCCCC",
+    "CCCCCCCCCC","CCCCCCCCCCC","CCCCCCCCCCCC","CCCCCCCCCCCCC",
+    "CCCCCCCCCCCCCC","CCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCC",
+    "CCCCCCCCCCCCCCCCC","CCCCCCCCCCCCCCCCCC"
+  ],
+  synthetic: [
+    "c1ccc(cc1)c2ccccc2","CC(C)(C)C","C1CC1","C1CCC(CC1)C2CCCCC2",
+    "C=Cc1ccccc1","CC#N","C1CCOC1","c1ccc(cc1)C(=O)O","c1ccc(cc1)C=O",
+    "c1ccc(cc1)N=O","c1ccc2ccccc2c1","c1ccc2ncncc2c1","c1ccc2c(c1)[nH]c1ccccc12",
+    "c1c[nH]cn1","c1ccc(cc1)S(=O)(=O)N","C1CCOC1","C1CCNCC1","C1CNC1",
+    "O=C1NC=NC2=CC=CC=C12","c1ccc(cc1)c2ccccc2","c1ccc2occc2c1",
+    "c1ccc2ncccc2c1","c1ccc2ccccc2c1","c1ccc2[nH]ccc2c1",
+    "c1ccc2scnc2c1","c1ccc2ccsc2c1","c1ccc2oncc2c1",
+    "c1ccc2cscc2c1","c1ccc2nccs2c1","c1ccc2ccoc2c1"
+  ]
+};
+
+function getPool() {
+  const pool = [];
+  for (const cat in LIBRARY) pool.push(...LIBRARY[cat]);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool;
+}
+
+function heuristicDescriptors(smiles) {
+  let c = 0, n = 0, o = 0, h = 0, cl = 0, f = 0, br = 0, s = 0, p = 0;
+  for (let ch of smiles) {
+    if (ch === 'C') c++; if (ch === 'N') n++; if (ch === 'O') o++;
+    if (ch === 'H') h++; if (ch === 'F') f++; if (ch === 'S') s++; if (ch === 'P') p++;
+    if (ch === 'l' && smiles[smiles.indexOf(ch)-1] === 'C') cl++;
+    if (ch === 'B' && smiles[smiles.indexOf(ch)+1] === 'r') br++;
+  }
+  if (h === 0) h = Math.max(0, c * 2 + n - 10);
+  const mw = c*12 + n*14 + o*16 + h*1 + cl*35.5 + f*19 + br*80 + s*32 + p*31;
+  const logp = (c - o - n) * 0.5 + cl*0.5 + f*0.25 + br*0.8;
+  const tpsa = n*23.5 + o*9.23;
+  const hbd = o + n;
+  const hba = o + n;
+  const rotatable = Math.floor((c + n + o) / 4);
+  return { smiles, mw, logp, tpsa, hbd, hba, rotatable, source: 'heuristic' };
+}
+
 async function mineOne() {
   if (!MINING || !CURRENT_USER) return false;
   const cid = CURRENT_CID;
@@ -270,36 +403,93 @@ async function mineOne() {
 }
 
 async function miningLoop() {
+  const delay = 800;
+  const pool = getPool();
+  let idx = 0;
+  
   while (MINING) {
-    const start = performance.now();
-    await mineOne();
-    const elapsed = performance.now() - start;
-    const wait = Math.max(0, 800 - elapsed);
-    await new Promise(r => setTimeout(r, wait));
+    let smi;
+    if (idx < pool.length) {
+      smi = pool[idx];
+    } else {
+      idx = 0;
+      smi = pool[idx];
+    }
+    idx++;
+    
+    const heur = heuristicDescriptors(smi);
+    const scored = score(heur);
+    scored.cid = idx;
+    
+    try {
+      const body = Object.assign({}, scored, UID ? { user_id: parseInt(UID) } : {});
+      const r = await fetch(API_URL + '/mine', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      if (r.ok) {
+        SESSION_COUNT++;
+        log('Molecule ' + idx + ' ✓ ' + smi.slice(0,30) + ' QED=' + scored.qed, 'mine');
+        updateDisplay();
+        loadStats();
+      }
+    } catch (e) { log('Save failed: ' + e.message, 'err'); }
+    
+    await new Promise(r => setTimeout(r, delay));
   }
 }
 
 function toggleMining() {
   if (MINING) {
     MINING = false;
+    stopPing();
     document.getElementById('btnMine').classList.remove('hidden');
     document.getElementById('btnStop').classList.add('hidden');
     document.getElementById('dispStatus').textContent = 'Paused';
     log('Mining paused', 'info');
   } else {
-    if (!CURRENT_USER) { showLoginModal(); return; }
+    if (!CURRENT_USER && !UID) { showLoginModal(); return; }
     MINING = true; START_TIME = Date.now(); SESSION_COUNT = 0;
     document.getElementById('btnMine').classList.add('hidden');
     document.getElementById('btnStop').classList.remove('hidden');
-    log('Mining started', 'ok');
+    log('Mining started' + (UID ? ' (UID: ' + UID + ')' : ''), 'ok');
+    startPing();
     miningLoop();
   }
 }
 
+// ==================== SESSION KEEP-ALIVE ====================
+let PING_INTERVAL = null;
+
+function startPing() {
+  if (PING_INTERVAL) clearInterval(PING_INTERVAL);
+  PING_INTERVAL = setInterval(async () => {
+    try {
+      const r = await fetch(API_URL + '/ping', { credentials: 'include' });
+      if (!r.ok) {
+        log('Session expired. Stopping mining.', 'err');
+        MINING = false;
+        clearInterval(PING_INTERVAL);
+        showLoginModal();
+      }
+    } catch (e) {
+      log('Ping failed: ' + e.message, 'err');
+    }
+  }, 300000); // Every 5 minutes
+}
+
+function stopPing() {
+  if (PING_INTERVAL) {
+    clearInterval(PING_INTERVAL);
+    PING_INTERVAL = null;
+  }
+}
+
 async function loadStats() {
-  if (!CURRENT_USER) return;
+  if (!CURRENT_USER && !UID) return;
   try {
-    const r = await fetch(API_URL + '/stats', { credentials: 'include' });
+    const url = UID ? API_URL + '/stats?user_id=' + UID : API_URL + '/stats';
+    const r = await fetch(url, { credentials: 'include' });
     const s = await r.json();
     if (s.total_molecules !== undefined) {
       document.getElementById('dispTotal').textContent = s.total_molecules;

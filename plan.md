@@ -1,30 +1,39 @@
-# Q-Mol Missing Features Build Plan
+# Q-Mol Outreach Campaign Plan
 
-## Stage 1 — Core Models & Requirements
-- [ ] Update `src/models.py` — Add Collection, CollectionItem, Webhook, WebhookLog tables
-- [ ] Update `requirements.txt` — Add strawberry-graphql dependencies
+## Task: Academic Email Campaign & Multi-Channel Outreach
 
-## Stage 2 — Service Modules (no inter-deps)
-- [ ] `src/collections/service.py` — Collections CRUD (SQLite + PostgreSQL)
-- [ ] `src/export/formats.py` — 3D conversions, FDA report, InChI, CDX
-- [ ] `src/pka/predictor.py` — pKa prediction with SMARTS patterns
-- [ ] `src/mmpa/analyzer.py` — Matched Molecular Pair Analysis
-- [ ] `src/pharmacophore/modeler.py` — Pharmacophore modeling
-- [ ] `src/webhooks/service.py` — Enhanced webhook system with events, logs, rotation
-- [ ] `src/graphql/schema.py` — Strawberry GraphQL schema
+### Stage 1 — Data Acquisition (Parallel with Stage 2 prep)
+- Download CSV from Q-Mol API: `http://photon-bounce.com/qmol/api/export`
+- Cookie: `PHPSESSID=a5e2c23c8a6ee75d34b068a8a6b37ca1`
+- Validate file integrity (7686 molecules expected, ADMET descriptors: QED, logP, TPSA, Lipinski, PAINS)
 
-## Stage 3 — Routers (depend on Stage 2)
-- [ ] `src/routers/v1/collections.py` — Collections REST API
-- [ ] `src/routers/v1/convert.py` — Update with new export formats
-- [ ] `src/routers/v1/pka.py` — pKa prediction endpoint
-- [ ] `src/routers/v1/mmpa.py` — MMP analysis endpoint
-- [ ] `src/routers/v1/pharmacophore.py` — Pharmacophore endpoint
-- [ ] `src/routers/v1/webhooks.py` — Replace with enhanced webhook router
+### Stage 2 — LinkedIn Pharma Outreach (WebBridge)
+- Navigate to LinkedIn, login if needed
+- Search: AI drug discovery, computational chemistry, cheminformatics
+- Send 20 connection requests with provided template
+- Track names, URLs, status
 
-## Stage 4 — Integration (depend on Stage 3)
-- [ ] `src/routers/v1/__init__.py` — Add all new routers
-- [ ] `api.py` — Mount GraphQL endpoint
+### Stage 3 — Reddit Drug Discovery Post (WebBridge)
+- Navigate to reddit.com/r/drugdiscovery
+- Create post with title and content
+- Include marketplace link and free preview offer
 
-## Stage 5 — Verification
-- [ ] Python syntax check on all new files
-- [ ] Import check on all modules
+### Stage 4 — Academic Email Campaign (Search + Research)
+- Search for 10 recent papers on virtual screening / molecular docking
+- Find first author contact info
+- Prepare email content (free 50-molecule dataset for citation)
+- Note: Actual email sending requires SMTP infrastructure; we'll prepare the campaign
+
+### Stage 5 — CRO Cold Email Blitz (Search + Research)
+- Search for business development contacts at: WuXi AppTec, Evotec, Charles River, Syngene, Sai Life Sciences
+- Prepare email content (Virtual screening library, pricing)
+- Note: Actual email sending requires SMTP infrastructure; we'll prepare the campaign
+
+### Stage 6 — Kaggle Dataset Upload (WebBridge)
+- Create Kaggle dataset with proper metadata
+- Upload CSV
+- Tag: cheminformatics, drug-discovery, molecular-descriptors
+
+### Stage 7 — Integration Report
+- Compile all actions, results, failures, URLs, names, emails found
+- Save to workspace as deliverable

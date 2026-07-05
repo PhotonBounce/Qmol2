@@ -1,0 +1,1 @@
+{"action":"evaluate","args":{"code":"(() => { const inputs = Array.from(document.querySelectorAll('input, textarea, [contenteditable]')); return JSON.stringify(inputs.slice(0, 10).map(el => ({ tag: el.tagName, placeholder: el.placeholder, name: el.name, className: el.className?.substring(0, 30) }))); })()"},"session":"qmol-outreach"}

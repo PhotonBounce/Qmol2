@@ -1,13 +1,33 @@
+# Q-Mol Project - Ignore files
+# Temporary files
+cpanel_cookies.txt
+*.tmp
+*.temp
+%TEMP%*
+webbridge-req-*.json
+
+# Deployment artifacts
+qmol-windows.zip
+qmol-v2.0.0-windows.zip
+
+# Local data
+data/*.sqlite
+data/*.sqlite-journal
+
+# Environment/config with secrets
+.env
+api/stripe-config.php
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node/Python virtual environments
+node_modules/
+venv/
 __pycache__/
 *.pyc
-.venv/
-venv/
-.env
-data/
-logs/
-*.parquet
-*.sqlite
-*.db
-.DS_Store
-.vscode/
-hf_cache/

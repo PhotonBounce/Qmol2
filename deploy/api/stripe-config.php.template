@@ -1,0 +1,32 @@
+# Q-Mol Stripe Checkout Configuration
+# Add your Stripe keys here and upload this file to /public_html/qmol/api/stripe-config.php
+
+<?php
+// Stripe configuration for instant molecule sales
+// Get your keys from: https://dashboard.stripe.com/apikeys
+
+// IMPORTANT: Copy this file to stripe-config.php and add your real keys
+// DO NOT commit the real stripe-config.php to git
+
+if (!defined('STRIPE_SECRET_KEY')) {
+    define('STRIPE_SECRET_KEY', getenv('STRIPE_SECRET_KEY') ?: '');
+}
+if (!defined('STRIPE_PUBLISHABLE_KEY')) {
+    define('STRIPE_PUBLISHABLE_KEY', getenv('STRIPE_PUBLISHABLE_KEY') ?: '');
+}
+if (!defined('STRIPE_WEBHOOK_SECRET')) {
+    define('STRIPE_WEBHOOK_SECRET', getenv('STRIPE_WEBHOOK_SECRET') ?: '');
+}
+
+// Price IDs for Stripe Products (create these in Stripe Dashboard)
+$STRIPE_PRICES = [
+    'mega-dataset' => 'price_YOUR_MEGA_DATASET_PRICE_ID',
+    'monthly-sub'  => 'price_YOUR_MONTHLY_PRICE_ID',
+    'yearly-sub'   => 'price_YOUR_YEARLY_PRICE_ID',
+];
+
+// Payment success/cancel URLs
+$BASE_URL = 'https://photon-bounce.com/qmol';
+$SUCCESS_URL = $BASE_URL . '/download.html?status=success';
+$CANCEL_URL = $BASE_URL . '/marketplace.html?status=cancel';
+?>

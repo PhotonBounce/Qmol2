@@ -1,0 +1,77 @@
+Q-MOL LINKEDIN PROSPECT SEARCH STRATEGY
+========================================
+
+GOAL: Find 20-30 qualified leads per week in drug discovery / cheminformatics
+
+--- SEARCH QUERIES TO USE ON LINKEDIN ---
+
+1. "cheminformatics" + "drug discovery" + United States/UK/Germany
+2. "computational chemistry" + "virtual screening" + biotech
+3. "molecular modeling" + "CRO" + "medicinal chemistry"
+4. "bioinformatics" + "target identification" + pharma
+5. "compound library" + "screening" + "ML" + startup
+6. "RDKit" + "Python" + "drug design" + researcher
+7. "ADMET" + "QSAR" + "pharmaceutical" + scientist
+8. "docking" + "molecular dynamics" + "biotech"
+9. "early stage drug discovery" + "founder" + "CEO"
+10. "AI drug discovery" + "machine learning" + "molecules"
+
+--- FILTERS TO APPLY ---
+
+- Connection: 2nd & 3rd (not 1st, you already know them)
+- Locations: US (Boston, SF, San Diego, NJ), UK (Cambridge, London), Germany (Munich, Heidelberg), Switzerland (Basel)
+- Industries: Biotechnology, Pharmaceuticals, Research, Higher Education
+- Company size: 1-50 (startups most likely to buy), 51-200 (CROs), 201-500 (mid-size pharma)
+- Job titles: Scientist, Senior Scientist, Principal Scientist, Director, Founder, CTO, Head of Chemistry, Cheminformatician, Computational Chemist, Medicinal Chemist, Data Scientist, ML Engineer
+
+--- HIGH-VALUE TARGETS ---
+
+STARTUP FOUNDERS (most likely to buy quickly):
+- AI drug discovery startups (1-20 employees)
+- Virtual screening companies
+- CROs offering computational chemistry services
+- Academic spinouts with SBIR/STTR funding
+
+CROs & BIOTECH (need compound libraries):
+- Contract research organizations doing hit identification
+- Biotechs with early-stage pipelines (preclinical)
+- Peptide/small molecule companies
+
+ACADEMIC LABS (good for free trials, word of mouth):
+- Professors with active NIH/NSF grants in computational chemistry
+- Graduate students working on virtual screening projects
+- Postdocs building ML models for drug discovery
+
+--- OUTREACH CADENCE ---
+
+DAY 1: Send connection request with NO message (just the default LinkedIn connection note)
+DAY 3: Send personalized value-first message (Template 5 from outreach-templates.txt)
+DAY 7: If no response, send follow-up with free dataset offer (Template 3)
+DAY 14: If still no response, soft close — "No pressure, just wanted to make sure you saw this"
+
+--- DAILY LIMITS (to avoid LinkedIn restrictions) ---
+
+- Connection requests: 15-20 per day max
+- Messages: 30-40 per day max
+- Profile views: 50-70 per day max
+- Wait at least 30 seconds between any action
+- Spread activity throughout the day (not all at once)
+
+--- TRACKING ---
+
+Use a simple spreadsheet to track:
+- Name | Company | Title | Date Connected | Message Sent | Response | Status
+- Status: Connected → Messaged → Responded → Interested → Purchased → Closed
+
+--- CRYPTO PAYMENT MESSAGING ---
+
+When a prospect shows interest, send:
+
+"Great! You can pay securely with crypto. We accept ETH, BTC, SOL, TRON, BNB, Polygon, Linea, Base, Arbitrum, and Optimism.
+
+Just go here: https://photon-bounce.com/qmol/pay-crypto.html
+
+Select your network, send the $299 equivalent, and paste your transaction hash. The CSV dataset is emailed automatically within 5 minutes."
+
+---
+SAVED AT: D:\Qmol-3\linkedin\prospect-search-strategy.txt

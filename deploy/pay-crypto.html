@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Mol — Multi-Crypto Payment</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+  .container { max-width:800px; margin:0 auto; padding:24px; }
+  header { text-align:center; padding:40px 0; border-bottom:1px solid #1e293b; margin-bottom:24px; }
+  h1 { font-size:2.2rem; background:linear-gradient(90deg,#f59e0b,#fbbf24); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { color:#94a3b8; font-size:1.1rem; margin-top:8px; }
+  .product { background:#1e293b; border:2px solid #f59e0b; border-radius:16px; padding:24px; margin-bottom:24px; text-align:center; }
+  .product h2 { color:#fbbf24; font-size:1.4rem; margin-bottom:8px; }
+  .product .price { font-size:3rem; font-weight:700; color:#f59e0b; margin:12px 0; }
+  .product .desc { color:#cbd5e1; font-size:14px; line-height:1.6; }
+  .step { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:20px; margin-bottom:16px; }
+  .step h3 { color:#38bdf8; font-size:1rem; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .step-num { background:#38bdf8; color:#0f172a; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+  .crypto-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
+  .crypto { background:#0f172a; border:1px solid #334155; border-radius:10px; padding:14px; cursor:pointer; transition:all .15s; position:relative; }
+  .crypto:hover { border-color:#38bdf8; }
+  .crypto.selected { border-color:#f59e0b; background:#1e293b; }
+  .crypto .name { font-weight:600; color:#f8fafc; font-size:14px; display:flex; align-items:center; gap:8px; }
+  .crypto .icon { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; }
+  .crypto .address { font-family:monospace; font-size:11px; color:#94a3b8; margin-top:8px; word-break:break-all; }
+  .crypto .copy-btn { position:absolute; top:10px; right:10px; background:#334155; color:#fff; border:none; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; }
+  .crypto .copy-btn:hover { background:#475569; }
+  .form-row { margin-bottom:16px; }
+  .form-row label { display:block; font-size:13px; color:#94a3b8; margin-bottom:6px; }
+  .form-row input, .form-row textarea { width:100%; padding:12px; background:#0f172a; border:1px solid #334155; border-radius:8px; color:#fff; font-size:14px; }
+  .btn { padding:14px 28px; border:none; border-radius:10px; font-size:16px; font-weight:600; cursor:pointer; transition:all .15s; width:100%; }
+  .btn-gold { background:#f59e0b; color:#0f172a; }
+  .btn-gold:hover { background:#fbbf24; }
+  .trust { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:20px 0; }
+  .trust-item { display:flex; align-items:center; gap:6px; color:#94a3b8; font-size:13px; }
+  .success { background:#064e3b; border:1px solid #10b981; color:#a7f3d0; padding:20px; border-radius:12px; text-align:center; display:none; }
+  .success.show { display:block; }
+  .qr-placeholder { background:#0f172a; border:1px dashed #334155; border-radius:8px; padding:20px; text-align:center; color:#64748b; font-size:13px; margin-top:12px; }
+  .network-tag { display:inline-block; background:#334155; color:#94a3b8; padding:2px 8px; border-radius:4px; font-size:10px; margin-left:6px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>💰 Q-Mol Payment</h1>
+  <p class="subtitle">Multi-crypto checkout. Instant dataset delivery after confirmation.</p>
+  <div class="trust">
+    <div class="trust-item">🔒 SSL Encrypted</div>
+    <div class="trust-item">⚡ Instant Delivery</div>
+    <div class="trust-item">📧 Email Receipt</div>
+  </div>
+</header>
+
+<div class="product">
+  <h2>Q-Mol 2,800+ Molecule Mega-Dataset</h2>
+  <div class="price">$299</div>
+  <div class="desc">2,800+ unique drug-like molecules with RDKit descriptors<br>
+  ADMET data | Lipinski/Verber filters | PAINS screening | CSV format</div>
+</div>
+
+<div class="step">
+  <h3><span class="step-num">1</span> Choose your network</h3>
+  <div class="crypto-grid" id="cryptoGrid">
+    <div class="crypto" data-chain="ETH" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#627eea;color:#fff;">◆</span> Ethereum (ETH)</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+    <div class="crypto" data-chain="BTC" data-addr="bc1qn67f2d50wng6h83cxsk7kc55yux7kv4l6dugrx" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#f7931a;color:#fff;">₿</span> Bitcoin (BTC)</div>
+      <div class="address">bc1qn67f2d50wng6h83cxsk7kc55yux7kv4l6dugrx</div>
+    </div>
+    <div class="crypto" data-chain="SOL" data-addr="5i6AY6jYFhGj2KThPQZiWtSV7jAQRZjtSvv2vfHmuQiU" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#14f195;color:#0f172a;">◎</span> Solana (SOL)</div>
+      <div class="address">5i6AY6jYFhGj2KThPQZiWtSV7jAQRZjtSvv2vfHmuQiU</div>
+    </div>
+    <div class="crypto" data-chain="TRON" data-addr="TGRDDVFkCD88qtAyjrHz5UhjjGoArhzwfK" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#ff060a;color:#fff;">T</span> Tron (TRX)</div>
+      <div class="address">TGRDDVFkCD88qtAyjrHz5UhjjGoArhzwfK</div>
+    </div>
+    <div class="crypto" data-chain="BNB" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#f3ba2f;color:#0f172a;">B</span> BNB Smart Chain</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+    <div class="crypto" data-chain="POLYGON" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#8247e5;color:#fff;">P</span> Polygon (MATIC)</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+    <div class="crypto" data-chain="LINEA" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#121212;color:#fff;border:1px solid #333;">L</span> Linea</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+    <div class="crypto" data-chain="BASE" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#0052ff;color:#fff;">B</span> Base (Coinbase)</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+    <div class="crypto" data-chain="ARBITRUM" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#28a0f0;color:#fff;">A</span> Arbitrum</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+    <div class="crypto" data-chain="OP" data-addr="0x75B30d0dE751D9628510f3cb273F09f7137f9E3F" onclick="selectCrypto(this)">
+      <button class="copy-btn" onclick="event.stopPropagation(); copyAddr(this)">Copy</button>
+      <div class="name"><span class="icon" style="background:#ff0420;color:#fff;">O</span> Optimism</div>
+      <div class="address">0x75B30d0dE751D9628510f3cb273F09f7137f9E3F</div>
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <h3><span class="step-num">2</span> Send $299 equivalent</h3>
+  <p style="color:#94a3b8;font-size:13px;margin-bottom:12px;">Click a network above to select it. Copy the address and send from your wallet. Use the exact amount in USD equivalent.</p>
+  <div class="qr-placeholder" id="qrArea">Select a network to see payment details</div>
+</div>
+
+<div class="step">
+  <h3><span class="step-num">3</span> Confirm your payment</h3>
+  <div class="form-row">
+    <label>Your Email (for delivery)</label>
+    <input type="email" id="email" placeholder="you@company.com" required>
+  </div>
+  <div class="form-row">
+    <label>Transaction Hash / ID</label>
+    <input type="text" id="txHash" placeholder="0x... or txid..." required>
+  </div>
+  <div class="form-row">
+    <label>Selected Network</label>
+    <input type="text" id="selectedNetwork" placeholder="Click Step 1 to select" readonly style="background:#1e293b;">
+  </div>
+  <button class="btn btn-gold" onclick="confirmPayment()">✅ Confirm Payment & Get Dataset</button>
+</div>
+
+<div class="success" id="successMsg">
+  <h3>🎉 Payment Received!</h3>
+  <p>Your dataset download link has been sent to your email.<br>Check your inbox (and spam folder) within 5 minutes.</p>
+  <p style="margin-top:12px;font-size:13px;">Questions? Email <a href="mailto:qmol@photon-bounce.com" style="color:#fbbf24;">qmol@photon-bounce.com</a></p>
+</div>
+
+</div>
+
+<script>
+const API_URL = '/qmol/api';
+let selectedChain = null;
+let selectedAddr = null;
+
+function selectCrypto(el) {
+  document.querySelectorAll('.crypto').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedChain = el.dataset.chain;
+  selectedAddr = el.dataset.addr;
+  document.getElementById('selectedNetwork').value = selectedChain + ' → ' + selectedAddr;
+  document.getElementById('qrArea').innerHTML = '<strong style="color:#fbbf24;">' + selectedChain + '</strong><br><span style="font-family:monospace;font-size:12px;color:#94a3b8;">' + selectedAddr + '</span><br><br><span style="color:#64748b;font-size:12px;">Send $299 USD equivalent to this address.<br>Your wallet will handle the exchange rate.</span>';
+}
+
+function copyAddr(btn) {
+  const addr = btn.parentElement.dataset.addr;
+  navigator.clipboard.writeText(addr).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+async function confirmPayment() {
+  const email = document.getElementById('email').value;
+  const txHash = document.getElementById('txHash').value;
+  if (!email || !txHash || !selectedChain) {
+    alert('Please fill in all fields and select a network.');
+    return;
+  }
+  try {
+    const r = await fetch(API_URL + '/buy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: 0, email: email, tx_hash: txHash, amount_usd: 299, network: selectedChain })
+    });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('successMsg').classList.add('show');
+      document.getElementById('successMsg').innerHTML += '<p style="margin-top:12px;"><a href="' + data.download_url + '" style="color:#fbbf24;font-weight:600;">⬇️ Download Now</a></p>';
+    } else {
+      alert('Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch (e) {
+    alert('Network error. Please email qmol@photon-bounce.com with your tx hash.');
+  }
+}
+</script>
+</body>
+</html>

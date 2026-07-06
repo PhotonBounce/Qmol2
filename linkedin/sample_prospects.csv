@@ -1,0 +1,11 @@
+name,title,company,url,location,notes,source
+Sarah Chen,Senior Scientist Cheminformatics,Atomwise,linkedin.com/in/sarahchen-chem,San Francisco,AI drug discovery startup,manual
+Dr. Michael Torres,Director Computational Chemistry,Recursion,linkedin.com/in/mtorres-cadd,Salt Lake City,High priority - uses RDKit,manual
+Lisa Park,Principal Scientist,Insitro,linkedin.com/in/lisapark-phd,San Francisco,ML for biology,manual
+James Wilson,Head of Medicinal Chemistry,Small Pharma Inc,linkedin.com/in/jwilson-chem,Boston,Early stage pipeline,manual
+Dr. Anna Kowalski,Postdoc Computational Chemistry,MIT,linkedin.com/in/akowalski-mit,Boston,Academic - good for word of mouth,manual
+Robert Chang,Founder & CEO,ChemAI Startup,linkedin.com/in/rchang-founder,San Diego,Startup founder - most likely buyer,manual
+Dr. Emily Foster,Director CRO Services,Charles River,linkedin.com/in/efoster-cro,Boston,CRO - needs compound libraries,manual
+David Kim,Data Scientist - Drug Discovery,Insilico Medicine,linkedin.com/in/dkim-ml-drug,New York,AI drug discovery,manual
+Dr. Rachel Green,Professor Medicinal Chemistry,UCSD,linkedin.com/in/rgreen-ucsd,San Diego,Academic with grants,manual
+Mark Johnson,VP Chemistry,Blueprint Medicines,linkedin.com/in/mjohnson-chem,Cambridge MA,Precision medicine,manual

@@ -1,0 +1,2 @@
+# Q-Mol LinkedIn Automation — Python Requirements
+requests>=2.28.0

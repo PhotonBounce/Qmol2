@@ -1,0 +1,88 @@
+Q-MOL PROSPECT OUTREACH TEMPLATES
+==================================
+
+TARGET AUDIENCE:
+- Cheminformatics scientists at biotech/pharma
+- CRO data teams
+- Academic computational chemistry labs
+- ML-for-drug-discovery startups
+- Medicinal chemists needing compound libraries
+
+--- TEMPLATE 1: WARM INTRO (Mutual connection or shared group) ---
+
+Hi [Name],
+
+I came across your work on [specific project/post] — really interesting approach to [molecular docking/ML screening/etc].
+
+I recently built Q-Mol, a platform that auto-harvests drug-like molecules from PubChem with RDKit descriptors (Lipinski, QED, PAINS, etc). We're at 2,800+ molecules and growing every 5 minutes via 10 parallel mining bots.
+
+The idea is to cut down manual curation time for compound libraries. Free 7-day trial, no CC required.
+
+Worth a look? → https://photon-bounce.com/qmol/app/
+
+Cheers,
+Dmitriy
+
+--- TEMPLATE 2: COLD OUTREACH (Found via search/post) ---
+
+Hi [Name],
+
+Quick question: how much time does your team spend curating compound libraries for screening campaigns?
+
+I built Q-Mol to automate that — it harvests drug-like molecules from PubChem with full ADMET descriptors (MW, LogP, TPSA, QED, Lipinski pass, PAINS hits). Currently 2,800+ molecules, auto-growing.
+
+Use cases we've seen:
+- Virtual screening prep (export CSV for docking)
+- ML training datasets (filtered by QED, no PAINS)
+- Assay panel design (CNS-penetrant subsets, kinase scaffolds)
+
+Free trial: https://photon-bounce.com/qmol/app/
+Marketplace for curated datasets: https://photon-bounce.com/qmol/marketplace.html
+
+Any feedback would be appreciated — especially on what filters you'd want.
+
+Best,
+Dmitriy Buchman
+
+--- TEMPLATE 3: FOLLOW-UP (After post engagement) ---
+
+Hi [Name],
+
+Thanks for the comment on my Q-Mol post. You mentioned [specific point they made] — that's exactly why I built the filtering layer.
+
+Happy to give you early access to the full dataset (2,800+ molecules, CSV) if you want to kick the tires. No strings, just looking for feedback from people who actually do this work.
+
+Let me know,
+Dmitriy
+
+--- TEMPLATE 4: SHORT & DIRECT ---
+
+Hi [Name],
+
+Built a tool that auto-curates compound libraries from PubChem — 2,800+ molecules with RDKit descriptors, free trial.
+
+https://photon-bounce.com/qmol/app/
+
+If this saves you even an hour a week, it's worth it.
+
+Dmitriy
+
+--- TEMPLATE 5: VALUE-FIRST (Sharing a resource) ---
+
+Hi [Name],
+
+Saw your post about [screening campaign/compound library]. I put together a free dataset of 50 drug-like molecules with ADMET descriptors that might be useful for your workflow — no PAINS, Lipinski-pass, QED > 0.6.
+
+Grab it here: https://photon-bounce.com/qmol/app/ (free preview, no signup)
+
+Also have a 2,800+ molecule full dataset if you need more. Happy to chat.
+
+Dmitriy
+
+--- IMPORTANT REMINDERS ---
+- Send max 3-5 connection requests per day to avoid LinkedIn restrictions
+- Personalize every message with at least one specific detail about the prospect
+- Wait 2-3 days between connection request and first message
+- Don't include URLs in the connection request itself — save for follow-up
+- Accept crypto: ETH, BTC, SOL, TRON, BNB, POLYGON, LINEA, BASE, ARBITRUM, OP
+- ETH primary: 0x75B30d0dE751D9628510f3cb273F09f7137f9E3F

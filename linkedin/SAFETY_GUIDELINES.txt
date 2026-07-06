@@ -1,0 +1,45 @@
+
+╔══════════════════════════════════════════════════════════════════════╗
+║           Q-MOL LINKEDIN SAFETY GUIDELINES                           ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  ⚠️  LinkedIn actively monitors for automation. Follow these rules:  ║
+║                                                                      ║
+║  DAILY LIMITS (hard caps):                                           ║
+║    • Profile views:     50 max                                       ║
+║    • Search queries:    20 max                                       ║
+║    • Pages per search:  5 max                                        ║
+║    • Connection reqs:   15 max (manual only)                         ║
+║    • Messages:          25 max (manual only)                         ║
+║                                                                      ║
+║  TIMING (human-like delays):                                         ║
+║    • Between actions:   30-120 seconds                               ║
+║    • Between profiles:  45-180 seconds                               ║
+║    • Page load wait:    5-10 seconds                                 ║
+║                                                                      ║
+║  BEHAVIOR:                                                           ║
+║    • Spread activity across the day                                  ║
+║    • Never run back-to-back sessions                                 ║
+║    • Vary search patterns                                            ║
+║    • Include reading pauses                                          ║
+║    • Scroll naturally (not just down)                                ║
+║                                                                      ║
+║  EXTRACTION ONLY — NO AUTOMATION OF:                                 ║
+║    ✗ Connection requests                                             ║
+║    ✗ Messages / InMails                                              ║
+║    ✗ Profile endorsements                                            ║
+║    ✗ Post likes/comments                                             ║
+║                                                                      ║
+║  WHAT WE DO:                                                         ║
+║    ✓ Search for prospects                                            ║
+║    ✓ Extract public profile data                                     ║
+║    ✓ Save to CSV for manual review                                   ║
+║    ✓ Score and prioritize leads                                      ║
+║                                                                      ║
+║  EMERGENCY STOP:                                                     ║
+║    If you see ANY captcha, verification, or warning:                 ║
+║    1. STOP immediately                                               ║
+║    2. Wait 24-48 hours before resuming                               ║
+║    3. Review and reduce limits                                       ║
+║    4. Consider manual operation for a period                         ║
+╚══════════════════════════════════════════════════════════════════════╝
+    

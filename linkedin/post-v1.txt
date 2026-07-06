@@ -1,0 +1,27 @@
+🧬 Just launched Q-Mol — a molecular informatics platform for drug discovery teams.
+
+After watching researchers spend hours manually curating compound libraries, I built something that automates the hard part.
+
+Here's what Q-Mol does in 30 seconds:
+
+→ Mines 2,800+ drug-like molecules from PubChem with RDKit-validated descriptors
+→ Filters by Lipinski, Veber, PAINS, QED score — all client-side, no server wait
+→ Exports datasets as CSV for docking, ML, or assay prep
+→ Marketplace for buying curated datasets (instant download after payment)
+
+The dataset auto-grows every 5 minutes via 10 parallel mining bots.
+
+Free 7-day trial. No credit card.
+
+Built with: SQLite, vanilla JS, PHP, Python, RDKit
+
+If you're in cheminformatics, CRO, or early-stage pharma — this might save you a day a week.
+
+🔗 Web App: https://photon-bounce.com/qmol/app/
+🔗 Marketplace: https://photon-bounce.com/qmol/marketplace.html
+🔗 APK Download: https://photon-bounce.com/qmol/download-app.html
+
+#cheminformatics #drugdiscovery #molecules #saas #biotech #pharma #rdkit #machinelearning #compchem
+
+---
+COPY THE ABOVE TEXT AND PASTE INTO LINKEDIN START A POST ---

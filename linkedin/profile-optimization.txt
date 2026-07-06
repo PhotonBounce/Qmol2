@@ -1,0 +1,62 @@
+LINKEDIN PROFILE OPTIMIZATION — DMITRIY BUCHMAN
+=================================================
+
+CORRECTED PUBLIC URL: linkedin.com/in/dmitriybuchman (no hyphen)
+
+--- POLISHED ABOUT SECTION — COPY & PASTE INTO LINKEDIN ---
+
+I run Photon Bounce — a solo studio building web apps, AI agents, and 3D/AR experiences for founders and research teams. 12 years shipping, 30+ production projects, 100% owned end-to-end.
+
+What I do:
+→ SaaS platforms & responsive web apps (Next.js, tRPC, Postgres, Cloudflare)
+→ AI application development (LLMs, RAG, embeddings, fine-tuning, NLP, computer vision)
+→ 3D / AR / VR experiences (Three.js, WebGL2, WebGPU, Unity, WebXR)
+→ UI/UX design & corporate branding
+→ Web3 & DAO governance (Solidity, EVM, TypeScript)
+
+Current focus: qMol — a quantum-molecular platform that auto-harvests drug-like datasets from PubChem. Live miner, auto-growing marketplace, multi-crypto payments. 2,800+ molecules and counting.
+
+Past work includes:
+• Occupant Killer — browser-native 3D shooter (Three.js, custom physics)
+• Ausis — native Android sleep/focus app with real-time DSP synthesis (Kotlin)
+• GovDAO — on-chain governance with token-weighted voting
+• AI Hospice Assistant — LLM + voice patient support with RAG backend
+• DJ-Photon — AI beat studio in the browser (procedural audio, 9 genres)
+
+I work with pre-seed founders, Y Combinator teams, research labs, and agencies (white-label friendly). Fixed-price builds, no hourly drift, weekly demos.
+
+📬 db@photon-bounce.com
+🌐 www.photon-bounce.com
+📱 857-316-5054
+
+---
+
+LINKEDIN POST AUDIT — RECOMMENDATIONS
+======================================
+
+WHAT TO DELETE:
+- Any posts with broken links or outdated project references
+- Posts with zero engagement from 6+ months ago
+- Reposts without your own commentary (looks low-effort)
+- Any posts that don't align with "web apps / AI / 3D / SaaS" positioning
+
+WHAT TO KEEP & PIN:
+- Your best-performing project showcase posts
+- Any posts about qMol, AI agents, or 3D work (your differentiators)
+- Posts that got genuine comments/questions from prospects
+
+WHAT TO POST NEXT (content calendar):
+Week 1: "Just launched qMol — a molecular dataset marketplace that auto-grows every 5 minutes"
+Week 2: "How I built a real-time DSP synthesis engine for Android using Kotlin (zero audio files)"
+Week 3: "12 years of solo shipping: what I learned about fixed-price vs hourly billing"
+Week 4: Case study post about a recent project (Occupant Killer, GovDAO, or AI Hospice)
+
+---
+
+ACTION ITEMS FOR YOU:
+1. Copy the About section above and paste into LinkedIn → Edit profile → About
+2. Go to your Activity tab → Posts → Review and delete old/low-value posts
+3. Publish the Q-Mol post (copy from linkedin/post-v1.txt)
+
+---
+

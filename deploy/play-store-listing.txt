@@ -1,0 +1,138 @@
+GOOGLE PLAY STORE LISTING — Q-MOL
+===================================
+
+APP DETAILS
+-----------
+App name: Q-Mol
+Package name: (needs to match your Flutter project — typically com.photonbounce.qmol)
+Category: Education / Science & Engineering
+Content rating: Everyone
+Contact email: db@photon-bounce.com
+Contact phone: 857-316-5054
+Website: https://photon-bounce.com/qmol
+Privacy policy: https://photon-bounce.com/qmol/privacy.html (needs to be created)
+
+SHORT DESCRIPTION (80 chars max)
+--------------------------------
+Drug-like molecule miner with ADMET descriptors, filters & dataset marketplace.
+
+FULL DESCRIPTION (4000 chars max)
+----------------------------------
+Q-Mol is a molecular informatics platform for drug discovery researchers, cheminformaticians, and computational chemistry teams.
+
+MINE MOLECULES
+• Auto-harvest drug-like molecules from PubChem
+• Full RDKit-validated descriptors: MW, LogP, TPSA, HBD, HBA, rotatable bonds
+• QED (Quantitative Estimate of Drug-likeness) scoring
+• Lipinski and Veber filter flags
+• PAINS (Pan-Assay Interference Compounds) screening
+
+FILTER & EXPORT
+• Filter by QED score, molecular weight, LogP, TPSA
+• Lipinski pass/fail highlighting
+• PAINS-free compound filtering
+• Export datasets as CSV for docking, ML, or assay preparation
+
+DATASET MARKETPLACE
+• Buy curated molecular datasets with crypto (ETH, BTC, SOL, and more)
+• Instant CSV download after payment confirmation
+• Free 7-day trial for registered users
+
+WHO IS IT FOR?
+• Cheminformatics scientists building compound libraries
+• Virtual screening teams preparing docking datasets
+• ML researchers training drug-discovery models
+• Academic labs needing drug-like molecule sets
+• CROs offering computational chemistry services
+
+Q-Mol is actively developed by Photon Bounce — a solo studio building web apps, AI agents, and scientific tools.
+
+WHAT'S NEW
+• Auto-growing molecule database (2,800+ compounds and counting)
+• Multi-crypto payment support
+• 7-day free trial for new users
+
+---
+
+GRAPHIC ASSETS REQUIRED
+-------------------------
+
+App Icon (PNG, 512×512)
+→ File: deploy/icon-512.png (already created)
+→ Upload to: Store listing → App icon
+
+Feature Graphic (PNG/JPEG, 1024×500)
+→ A wide banner showing Q-Mol branding
+→ Upload to: Store listing → Feature graphic
+
+Phone Screenshots (PNG/JPEG, 16:9 or 9:16, 2-8 screenshots)
+→ Screenshot 1: Dashboard with molecule count & stats
+→ Screenshot 2: Molecule browser with filters
+→ Screenshot 3: ADMET descriptor detail view
+→ Screenshot 4: Dataset marketplace / payment
+→ Screenshot 5: CSV export / download
+
+Tablet Screenshots (optional, 7-inch and 10-inch)
+→ Same content as phone screenshots, but in tablet aspect ratio
+
+Video (optional, 30s-2min, YouTube URL)
+→ A demo walkthrough of the app
+
+---
+
+AAB BUILD INSTRUCTIONS
+----------------------
+
+You currently have an APK (deploy/qmol.apk) but Google Play requires AAB format.
+
+TO BUILD A SIGNED AAB FROM YOUR FLUTTER PROJECT:
+
+1. Open your Flutter project in Android Studio or VS Code
+
+2. Create/update android/key.properties:
+   storePassword=YOUR_KEYSTORE_PASSWORD
+   keyPassword=YOUR_KEY_PASSWORD
+   keyAlias=YOUR_KEY_ALIAS
+   storeFile=../your_keystore.jks
+
+3. Build the release AAB:
+   cd D:\Qmol-3
+   flutter build appbundle --release
+
+4. The AAB will be at:
+   build\app\outputs\bundle\release\app-release.aab
+
+5. Upload this AAB to Google Play Console
+
+IF YOU DON'T HAVE A SIGNING KEY:
+
+1. Generate one:
+   cd D:\Qmol-3\android
+   keytool -genkey -v -keystore qmol-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias qmol
+
+2. Update android/key.properties with the new keystore details
+
+3. Build AAB as above
+
+---
+
+PLAY CONSOLE SETUP STEPS
+------------------------
+
+1. Open https://play.google.com/console
+2. Click "Create app"
+3. Enter app name: "Q-Mol"
+4. Select default language: English
+5. Choose app type: App
+6. Set pricing: Free (or Paid if you want to charge)
+7. Fill in store listing with content above
+8. Upload icon-512.png
+9. Create feature graphic (1024×500)
+10. Upload 5+ phone screenshots
+11. Upload signed AAB
+12. Go to Testing → Internal testing → Create release
+13. Upload AAB to internal testing track
+14. Add testers (your email + a few friends)
+15. Publish to internal testing
+
+---

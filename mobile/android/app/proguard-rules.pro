@@ -12,6 +12,13 @@
 -keep class com.google.firebase.** { *; }
 -dontwarn io.flutter.embedding.**
 
+# Google Play Core — Flutter's deferred-components / split-install support
+# references these classes, but this app does not use dynamic feature delivery,
+# so the Play Core library is not on the classpath. Tell R8 to ignore the
+# missing references instead of failing the release build.
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+
 # JSON serialization (freezed + json_serializable)
 -keep class qmol.models.** { *; }
 -keepclassmembers class qmol.models.** { *; }

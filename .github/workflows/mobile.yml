@@ -16,6 +16,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: "3.24.5"
       - name: Scaffold project + drop in the app kit
         run: |
           flutter create --org app.qmol --project-name qmol /tmp/qmol_app

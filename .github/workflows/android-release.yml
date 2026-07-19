@@ -1,0 +1,123 @@
+name: android-release
+
+# Builds the REAL mobile/ Flutter app as a Google Play-ready, signed
+# Android App Bundle (.aab) plus per-ABI release APKs, and publishes them
+# to a GitHub Release for download.
+#
+# Signing:
+#   - If the repo secret KEYSTORE_BASE64 is set, the build is signed with that
+#     upload key (Play-uploadable). Passwords come from the KEYSTORE_PASSWORD /
+#     KEY_PASSWORD / KEY_ALIAS secrets.
+#   - If it is NOT set, the build is signed with a throwaway CI key so the
+#     pipeline still produces a testable APK/AAB — that build is NOT valid for
+#     a Google Play upload (a warning is emitted).
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+      - "claude/**"
+    tags: ["app-v*"]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/android-release.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.24.5"
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Resolve dependencies
+        working-directory: mobile
+        run: flutter pub get
+
+      - name: Prepare signing key
+        working-directory: mobile
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          KS="$RUNNER_TEMP/qmol-upload.jks"
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$KS"
+            echo "QMOL_STORE_PASSWORD=${KEYSTORE_PASSWORD}" >> "$GITHUB_ENV"
+            echo "QMOL_KEY_PASSWORD=${KEY_PASSWORD:-$KEYSTORE_PASSWORD}" >> "$GITHUB_ENV"
+            echo "QMOL_KEY_ALIAS=${KEY_ALIAS:-qmol}" >> "$GITHUB_ENV"
+            echo "SIGNED_WITH=upload key (secrets) — Google Play uploadable" >> "$GITHUB_ENV"
+            echo "Signing with upload keystore from secrets."
+          else
+            keytool -genkeypair -v -keystore "$KS" -alias qmol \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass ci-ephemeral -keypass ci-ephemeral \
+              -dname "CN=Q-Mol CI, OU=Mobile, O=Q-Mol, C=US"
+            echo "QMOL_STORE_PASSWORD=ci-ephemeral" >> "$GITHUB_ENV"
+            echo "QMOL_KEY_PASSWORD=ci-ephemeral" >> "$GITHUB_ENV"
+            echo "QMOL_KEY_ALIAS=qmol" >> "$GITHUB_ENV"
+            echo "SIGNED_WITH=throwaway CI key — TEST ONLY, not valid for Play upload" >> "$GITHUB_ENV"
+            echo "::warning::KEYSTORE_BASE64 secret not set — signed with a throwaway CI key. This build installs for testing but CANNOT be uploaded to Google Play. Add the KEYSTORE_BASE64/KEYSTORE_PASSWORD/KEY_PASSWORD/KEY_ALIAS secrets to produce an upload-signed AAB."
+          fi
+          echo "QMOL_KEYSTORE_PATH=$KS" >> "$GITHUB_ENV"
+
+      - name: Build release App Bundle (.aab)
+        working-directory: mobile
+        run: flutter build appbundle --release --dart-define=QMOL_API=https://api.qmol.app/v1
+
+      - name: Build release APKs (per-ABI)
+        working-directory: mobile
+        run: flutter build apk --release --split-per-abi --dart-define=QMOL_API=https://api.qmol.app/v1
+
+      - name: Collect artifacts
+        working-directory: mobile
+        run: |
+          set -e
+          mkdir -p ../dist
+          cp build/app/outputs/bundle/release/app-release.aab "../dist/qmol-${GITHUB_RUN_NUMBER}.aab"
+          cp build/app/outputs/flutter-apk/*.apk ../dist/ || true
+          echo "Signed with: ${SIGNED_WITH}"
+          ls -lh ../dist
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmol-android-${{ github.run_number }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-build-${{ github.run_number }}
+          name: Q-Mol Android build ${{ github.run_number }}
+          body: |
+            Automated Q-Mol Android release build.
+
+            - `*.aab` — Android App Bundle for Google Play upload.
+            - `*.apk` — per-ABI release APKs for direct sideload install
+              (`arm64-v8a` is the right one for most modern phones).
+
+            Signed with: ${{ env.SIGNED_WITH }}
+          files: dist/*
+          fail_on_unmatched_files: true

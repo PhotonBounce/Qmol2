@@ -1,0 +1,7 @@
+Meet Q-Mol — molecular intelligence, right in your pocket.
+Paste any molecule as a SMILES string, and Q-Mol goes to work. In seconds you get molecular weight, logP, polar surface area, hydrogen-bond counts, and drug-likeness.
+More than fifty molecular descriptors, computed instantly, all powered by the RDKit chemistry engine.
+Predict ADMET properties like solubility and hERG. Screen candidates against Lipinski and Veber rules. And flag PAINS liabilities before they ever cost you time or money.
+Explore chemical space at scale — search millions of structures by similarity, cluster your library with Butina, and generate accurate three-dimensional conformers.
+And it works everywhere you do: a REST API with thirty endpoints, a command-line tool, and now a native Android app. No cloud lock-in — your chemistry stays yours.
+Q-Mol. Compute the molecule. Download today.

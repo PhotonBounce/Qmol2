@@ -27,10 +27,12 @@ os.makedirs(OUT, exist_ok=True)
 FFMPEG = os.environ.get("FFMPEG") or shutil.which("ffmpeg") or "ffmpeg"
 FFPROBE = os.environ.get("FFPROBE") or shutil.which("ffprobe") or "ffprobe"
 
-API_KEY = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+API_KEY = (os.environ.get("ELEVENLABS_API_KEY") or "").strip()
 # If unset, we auto-pick an available voice from the account (see resolve_voice).
-VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
-MODEL_ID = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2").strip()
+VOICE_ID = (os.environ.get("ELEVENLABS_VOICE_ID") or "").strip()
+# NB: "or" (not a get() default) — CI passes the env var as empty when the
+# secret is absent, and an empty model_id is rejected by the API.
+MODEL_ID = (os.environ.get("ELEVENLABS_MODEL_ID") or "").strip() or "eleven_multilingual_v2"
 # Preferred premium voices, tried in order if present on the account.
 PREFERRED_VOICES = ["Rachel", "Sarah", "Brian", "Adam", "Antoni", "Bella",
                     "Charlie", "Daniel", "George", "Bill", "Jessica", "Laura"]
@@ -103,7 +105,9 @@ def tts(text):
                 if chunk:
                     f.write(chunk)
     except Exception as e:  # noqa: BLE001
-        print("ElevenLabs TTS failed:", repr(e), file=sys.stderr)
+        print("ElevenLabs TTS failed:", repr(e),
+              "status:", getattr(e, "status_code", "?"),
+              "body:", getattr(e, "body", "?"), file=sys.stderr)
         sys.exit(1)
     size = os.path.getsize(MP3)
     print(f"narration.mp3 written ({size} bytes)", flush=True)

@@ -14,14 +14,10 @@ Pipeline (runs on a machine with network + full ffmpeg, i.e. CI):
 Requires env ELEVENLABS_API_KEY. Optional: ELEVENLABS_VOICE_ID,
 ELEVENLABS_MODEL_ID, FFMPEG (path to ffmpeg binary).
 """
-import base64
-import json
 import os
 import shutil
 import subprocess
 import sys
-import urllib.request
-import urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FRAMES = os.path.join(HERE, "frames")
@@ -35,7 +31,6 @@ API_KEY = os.environ.get("ELEVENLABS_API_KEY", "").strip()
 # If unset, we auto-pick an available voice from the account (see resolve_voice).
 VOICE_ID = os.environ.get("ELEVENLABS_VOICE_ID", "").strip()
 MODEL_ID = os.environ.get("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2").strip()
-API_BASE = "https://api.elevenlabs.io/v1"
 # Preferred premium voices, tried in order if present on the account.
 PREFERRED_VOICES = ["Rachel", "Sarah", "Brian", "Adam", "Antoni", "Bella",
                     "Charlie", "Daniel", "George", "Bill", "Jessica", "Laura"]
@@ -59,82 +54,64 @@ def read_segments():
         return [ln.strip() for ln in f if ln.strip()]
 
 
-def _headers():
-    return {"xi-api-key": API_KEY, "content-type": "application/json",
-            "accept": "application/json"}
-
-
-def resolve_voice():
+def resolve_voice(client):
     """Return a usable voice_id: env override, else pick from the account."""
     if VOICE_ID:
-        print("Using voice from env:", VOICE_ID)
+        print("Using voice from env:", VOICE_ID, flush=True)
         return VOICE_ID
-    req = urllib.request.Request(f"{API_BASE}/voices", headers=_headers(),
-                                 method="GET")
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            voices = json.loads(resp.read().decode("utf-8")).get("voices", [])
-        by_name = {v.get("name"): v.get("voice_id") for v in voices}
-        for name in PREFERRED_VOICES:
-            if name in by_name:
-                print(f"Using voice: {name} ({by_name[name]})")
-                return by_name[name]
-        if voices:
-            print(f"Using first available voice: {voices[0].get('name')} "
-                  f"({voices[0].get('voice_id')})")
-            return voices[0]["voice_id"]
-    except urllib.error.HTTPError as e:
-        print("voices list error", e.code, e.read().decode("utf-8", "ignore"),
-              file=sys.stderr)
+        voices = list(client.voices.get_all().voices)
+    except Exception as e:  # noqa: BLE001
+        print("voices list error:", e, file=sys.stderr)
+        voices = []
+    if voices:
+        names = [(v.name or "") for v in voices]
+        print("Account voices:", ", ".join(names), flush=True)
+        # Prefer a known narrator voice; account voice names often carry
+        # suffixes like "Roger - Laid-Back, Casual" so match on the first word.
+        for pref in PREFERRED_VOICES:
+            for v in voices:
+                first = (v.name or "").split(" ")[0].strip(" -,")
+                if first.lower() == pref.lower():
+                    print(f"Using voice: {v.name} ({v.voice_id})", flush=True)
+                    return v.voice_id
+        v = voices[0]
+        print(f"Using first available voice: {v.name} ({v.voice_id})",
+              flush=True)
+        return v.voice_id
     return "21m00Tcm4TlvDq8ikWAM"  # last-resort classic default
-
-
-def _post(url, body):
-    req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"),
-                                 headers=_headers(), method="POST")
-    return urllib.request.urlopen(req, timeout=180)
 
 
 def tts(text):
     if not API_KEY:
         print("ERROR: ELEVENLABS_API_KEY is not set.", file=sys.stderr)
         sys.exit(78)  # EX_CONFIG -> handled as a clean skip by the workflow
-    vid = resolve_voice()
-    body = {
-        "text": text,
-        "model_id": MODEL_ID,
-        "voice_settings": {
-            "stability": 0.45,
-            "similarity_boost": 0.8,
-            "style": 0.15,
-            "use_speaker_boost": True,
-        },
-    }
-    # Preferred: with-timestamps (gives per-character timing for scene sync).
+    from elevenlabs.client import ElevenLabs
+
+    client = ElevenLabs(api_key=API_KEY)
+    vid = resolve_voice(client)
+    print(f"Synthesizing with voice_id={vid} model={MODEL_ID}", flush=True)
     try:
-        url = (f"{API_BASE}/text-to-speech/{vid}/with-timestamps"
-               f"?output_format=mp3_44100_128")
-        with _post(url, body) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        audio = client.text_to_speech.convert(
+            voice_id=vid,
+            text=text,
+            model_id=MODEL_ID,
+            output_format="mp3_44100_128",
+        )
         with open(MP3, "wb") as f:
-            f.write(base64.b64decode(data["audio_base64"]))
-        return data.get("alignment") or data.get("normalized_alignment")
-    except urllib.error.HTTPError as e:
-        msg = e.read().decode("utf-8", "ignore")
-        print(f"with-timestamps unavailable ({e.code}: {msg}); "
-              f"falling back to plain TTS", file=sys.stderr)
-    # Fallback: plain audio (no timestamps -> proportional scene timing).
-    try:
-        url = f"{API_BASE}/text-to-speech/{vid}?output_format=mp3_44100_128"
-        with _post(url, body) as resp:
-            audio = resp.read()
-        with open(MP3, "wb") as f:
-            f.write(audio)
-        return None
-    except urllib.error.HTTPError as e:
-        print("ElevenLabs error", e.code, e.read().decode("utf-8", "ignore"),
+            for chunk in audio:
+                if chunk:
+                    f.write(chunk)
+    except Exception as e:  # noqa: BLE001
+        print("ElevenLabs TTS failed:", repr(e), file=sys.stderr)
+        sys.exit(1)
+    size = os.path.getsize(MP3)
+    print(f"narration.mp3 written ({size} bytes)", flush=True)
+    if size < 10_000:
+        print("ERROR: narration suspiciously small — aborting.",
               file=sys.stderr)
         sys.exit(1)
+    return None  # proportional scene timing (per-character) is used
 
 
 def probe_duration(path):

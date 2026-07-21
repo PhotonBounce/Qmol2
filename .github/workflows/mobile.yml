@@ -16,10 +16,11 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: "3.24.5"
       - name: Scaffold project + drop in the app kit
         run: |
           flutter create --org app.qmol --project-name qmol /tmp/qmol_app
-          cp -r mobile/lib mobile/pubspec.yaml mobile/analysis_options.yaml /tmp/qmol_app/
+          cp -r mobile/lib mobile/assets mobile/pubspec.yaml mobile/analysis_options.yaml /tmp/qmol_app/
       - name: pub get
         working-directory: /tmp/qmol_app
         run: flutter pub get

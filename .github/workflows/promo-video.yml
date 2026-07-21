@@ -1,0 +1,89 @@
+name: promo-video
+
+# Renders the Q-Mol 60s vertical promo (YouTube Short) with an ElevenLabs
+# voiceover and publishes the HD MP4 to a GitHub Release.
+#
+# Requires the repo secret ELEVENLABS_API_KEY. Optional secrets:
+#   ELEVENLABS_VOICE_ID  (default: Rachel, 21m00Tcm4TlvDq8ikWAM)
+#   ELEVENLABS_MODEL_ID  (default: eleven_multilingual_v2)
+#
+# If ELEVENLABS_API_KEY is absent the job skips cleanly (stays green) with a
+# notice — add the secret and re-run to produce the video.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    paths:
+      - "promo/**"
+      - ".github/workflows/promo-video.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for ElevenLabs key
+        id: check
+        env:
+          KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "have_key=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ELEVENLABS_API_KEY secret is not set — skipping the promo render. Add it under Settings → Secrets and variables → Actions, then re-run this workflow."
+          else
+            echo "have_key=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.check.outputs.have_key == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        if: steps.check.outputs.have_key == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core fonts-liberation
+          python -m pip install --upgrade pip
+          pip install Pillow elevenlabs
+
+      - name: Render scenes
+        if: steps.check.outputs.have_key == 'true'
+        run: python promo/scenes.py
+
+      - name: Build video
+        if: steps.check.outputs.have_key == 'true'
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ secrets.ELEVENLABS_VOICE_ID }}
+          ELEVENLABS_MODEL_ID: ${{ secrets.ELEVENLABS_MODEL_ID }}
+        run: python promo/make_video.py
+
+      - name: Upload artifact
+        if: steps.check.outputs.have_key == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: qmol-short-${{ github.run_number }}
+          path: promo/out/qmol_short.mp4
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: steps.check.outputs.have_key == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: promo-video-${{ github.run_number }}
+          name: Q-Mol promo video ${{ github.run_number }}
+          body: |
+            Q-Mol 60-second vertical promo (YouTube Short), 1080x1920 H.264.
+            Voiceover generated with ElevenLabs.
+
+            Download `qmol_short.mp4` and upload it to YouTube as a Short.
+          files: promo/out/qmol_short.mp4
+          fail_on_unmatched_files: true
